@@ -1,0 +1,26 @@
+{
+  "status": "ok",
+  "totalResults": 2,
+  "articles": [
+    {
+      "source": { "id": null, "name": "Example" },
+      "author": "Reporter",
+      "title": "Market rallies on earnings",
+      "description": "Stocks rise as earnings beat expectations.",
+      "url": "https://example.com/market-rally",
+      "urlToImage": "https://example.com/image.jpg",
+      "publishedAt": "2025-12-12T10:00:00Z",
+      "content": "Detailed article content here"
+    },
+    {
+      "source": { "id": null, "name": "Example" },
+      "author": "Analyst",
+      "title": "Tech leads gains",
+      "description": "Technology sector drives index higher.",
+      "url": "https://example.com/tech-gains",
+      "urlToImage": "https://example.com/tech.jpg",
+      "publishedAt": "2025-12-12T11:00:00Z",
+      "content": "More content"
+    }
+  ]
+}

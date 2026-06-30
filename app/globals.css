@@ -1,0 +1,111 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 250, 250, 250;
+  --background-end-rgb: 255, 255, 255;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 15, 15, 15;
+    --background-end-rgb: 20, 20, 20;
+  }
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 224 71.4% 4.1%;
+    --card: 0 0% 100%;
+    --card-foreground: 224 71.4% 4.1%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 71.4% 4.1%;
+    /* Deep Violet Primary */
+    --primary: 262.1 83.3% 57.8%;
+    --primary-foreground: 210 20% 98%;
+    --secondary: 220 14.3% 95.9%;
+    --secondary-foreground: 220.9 39.3% 11%;
+    --muted: 220 14.3% 95.9%;
+    --muted-foreground: 220 8.9% 46.1%;
+    --accent: 220 14.3% 95.9%;
+    --accent-foreground: 220.9 39.3% 11%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 20% 98%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 262.1 83.3% 57.8%;
+    --radius: 0.75rem;
+    --chart-1: 262.1 83.3% 57.8%;
+    /* Violet */
+    --chart-2: 173.4 80.4% 40%;
+    /* Teal */
+    --chart-3: 197 71% 73%;
+    /* Light Blue */
+    --chart-4: 43 74% 66%;
+    /* Yellow */
+    --chart-5: 27 87% 67%;
+    /* Orange */
+  }
+
+  .dark {
+    /* Midnight Theme */
+    --background: 240 10% 3.9%;
+    /* #09090b - Very dark */
+    --foreground: 0 0% 98%;
+    --card: 240 10% 5%;
+    /* Slightly lighter than bg */
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+
+    /* Neon Accents */
+    --primary: 263 70% 50%;
+    /* Electric Violet */
+    --primary-foreground: 210 40% 98%;
+    --secondary: 240 4% 16%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 240 4% 16%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 263 70% 50%;
+    /* Reusing primary for accent hover */
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 4% 16%;
+    --input: 240 4% 16%;
+    --ring: 263 70% 50%;
+
+    /* Neon Chart Colors */
+    --chart-1: 263 70% 50%;
+    /* Violet */
+    --chart-2: 180 100% 50%;
+    /* Cyan */
+    --chart-3: 300 100% 50%;
+    /* Magenta */
+    --chart-4: 60 100% 50%;
+    /* Yellow */
+    --chart-5: 12 76% 61%;
+    /* Orange */
+  }
+}
+
+@layer base {
+  :root {
+    --radius: 0.5rem;
+    /* Sharper corners */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}

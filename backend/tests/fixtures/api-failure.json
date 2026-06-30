@@ -1,0 +1,5 @@
+{
+  "status": "error",
+  "code": "rateLimited",
+  "message": "Too many requests. Please try again later."
+}

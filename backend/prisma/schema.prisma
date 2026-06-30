@@ -1,0 +1,127 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-1.0.x", "rhel-openssl-3.0.x", "debian-openssl-1.1.x"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  password      String?
+  image         String?
+  emailVerified DateTime?
+
+  emailVerificationToken       String?
+  emailVerificationTokenExpiry DateTime?
+  
+  resetPasswordToken           String?
+  resetPasswordTokenExpiry     DateTime?
+  
+  // Notification Preferences (stored as JSON)
+
+  notificationPreferences Json?
+
+  // Relations
+  portfolios    Portfolio[]
+  watchlists    Watchlist[] // This is the complex watchlist feature
+  favorites     UserFavorite[] // This is the simple 'watchlist' array from legacy User model
+  trackedAssets TrackedAsset[]
+  
+  isPublic      Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Portfolio {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [email])
+  
+  name        String
+  description String?   @db.Text
+  
+  holdings    Holding[]
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+model Holding {
+  id            String    @id @default(cuid())
+  portfolioId   String
+  portfolio     Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  
+  symbol        String
+  assetType     String    // 'stock', 'crypto', 'forex'
+  quantity      Float
+  purchasePrice Float
+  purchaseDate  DateTime  @default(now())
+  createdAt     DateTime  @default(now()) // Added for ordering stability
+  notes         String?   @db.Text
+}
+
+model UserFavorite {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [email])
+  
+  symbol    String
+  addedAt   DateTime @default(now())
+
+  @@unique([userId, symbol]) // Prevent duplicate favorites
+  @@index([userId])
+}
+
+model Watchlist {
+  id        String          @id @default(cuid())
+  userId    String
+  user      User            @relation(fields: [userId], references: [email])
+  
+  name      String
+  assets    WatchlistItem[]
+  
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  @@index([userId])
+}
+
+
+model WatchlistItem {
+  id          String    @id @default(cuid())
+  watchlistId String
+  watchlist   Watchlist @relation(fields: [watchlistId], references: [id], onDelete: Cascade)
+  
+  symbol      String
+  assetType   String    // 'stock', 'crypto', 'forex'
+  addedAt     DateTime  @default(now())
+  notes       String?   @db.Text
+  alertPrice  Float?
+}
+
+model TrackedAsset {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [email])
+  
+  symbol    String
+  type      String
+  addedAt   DateTime @default(now())
+
+  @@index([userId])
+}
+
+model RateLimit {
+  id        String   @id @default(cuid())
+  key       String   @unique // e.g., "signup:127.0.0.1"
+  count     Int      @default(0)
+  expiresAt DateTime
+}
