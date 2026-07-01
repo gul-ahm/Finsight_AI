@@ -4,7 +4,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -44,7 +44,7 @@ model Portfolio {
   user        User      @relation(fields: [userId], references: [email])
   
   name        String
-  description String?   @db.Text
+  description String?
   
   holdings    Holding[]
   
@@ -65,7 +65,7 @@ model Holding {
   purchasePrice Float
   purchaseDate  DateTime  @default(now())
   createdAt     DateTime  @default(now()) // Added for ordering stability
-  notes         String?   @db.Text
+  notes         String?
 }
 
 model UserFavorite {
@@ -103,7 +103,7 @@ model WatchlistItem {
   symbol      String
   assetType   String    // 'stock', 'crypto', 'forex'
   addedAt     DateTime  @default(now())
-  notes       String?   @db.Text
+  notes       String?
   alertPrice  Float?
 }
 

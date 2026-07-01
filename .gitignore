@@ -41,3 +41,8 @@ test-results
 playwright-report
 .envM
 .env1local
+
+# SQLite local databases
+backend/prisma/*.db
+backend/prisma/*.db-journal
+
