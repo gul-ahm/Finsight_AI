@@ -116,7 +116,7 @@ export default function Stocks() {
   const fetchStocks = async () => {
     setLoading(true);
     try {
-      const response = await fetch("/finsight-ai/api/stocks");
+      const response = await fetch("/api/stocks");
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || `HTTP error! Status: ${response.status}`);

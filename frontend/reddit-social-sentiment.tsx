@@ -96,7 +96,7 @@ export function RedditSocialSentiment({
     setError(null);
     
     try {
-      const response = await fetch(`/finsight-ai/api/reddit?symbol=${encodeURIComponent(targetSymbol)}`);
+      const response = await fetch(`/api/reddit?symbol=${encodeURIComponent(targetSymbol)}`);
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || `HTTP error! Status: ${response.status}`);

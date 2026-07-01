@@ -89,7 +89,7 @@ export default function Forex() {
     try {
       await new Promise((resolve) => setTimeout(resolve, 500)); // Simulate network delay
       const response = await fetch(
-        `/finsight-ai/api/forexs?page=${page}&perPage=${perPage}&currencyGroup=${encodeURIComponent(
+        `/api/forexs?page=${page}&perPage=${perPage}&currencyGroup=${encodeURIComponent(
           selectedType
         )}&searchQuery=${encodeURIComponent(searchQuery)}`
       );
@@ -113,7 +113,7 @@ export default function Forex() {
           ).sort();
           setTypeOptions(["All", ...types]);
         } else {
-          const optionsResponse = await fetch(`/finsight-ai/api/forexs?page=1&perPage=${perPage}`);
+          const optionsResponse = await fetch(`/api/forexs?page=1&perPage=${perPage}`);
           if (optionsResponse.ok) {
             const optionsData: ForexResponse = await optionsResponse.json();
             const types = Array.from(
@@ -173,7 +173,7 @@ export default function Forex() {
   // Function to check if a Forex pair is supported
   const checkPairSupport = async (symbol: string): Promise<boolean> => {
     try {
-      const response = await fetch(`/finsight-ai/api/forex?symbol=${symbol}`);
+      const response = await fetch(`/api/forex?symbol=${symbol}`);
       if (!response.ok) {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const errorData = await response.json();

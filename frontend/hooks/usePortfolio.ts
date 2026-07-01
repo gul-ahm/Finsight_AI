@@ -43,7 +43,7 @@ export function usePortfolio() {
 
     const fetchPortfolios = async () => {
         try {
-            const res = await fetch('/finsight-ai/api/portfolio');
+            const res = await fetch('/api/portfolio');
             if (!res.ok) throw new Error('Failed to fetch portfolios');
 
             const data: Portfolio[] = await res.json();

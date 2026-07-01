@@ -59,7 +59,7 @@ export default function PortfolioAnalyticsPage() {
 
   const fetchPortfolio = async () => {
     try {
-      const res = await fetch(`/finsight-ai/api/portfolio/${params.id}`);
+      const res = await fetch(`/api/portfolio/${params.id}`);
       if (res.ok) {
         const data = await res.json();
         setPortfolio(data);

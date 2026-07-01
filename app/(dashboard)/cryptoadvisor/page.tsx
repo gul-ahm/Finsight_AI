@@ -848,7 +848,7 @@ Please provide a valid crypto symbol for analysis.`;
       // Fetch Reddit sentiment data for general analysis
       if (isGeneralAnalysis || needsTrend || needsQuote) {
         try {
-          const redditResponse = await fetch(`/finsight-ai/api/reddit?symbol=${symbol}`);
+          const redditResponse = await fetch(`/api/reddit?symbol=${symbol}`);
           if (redditResponse.ok) {
             redditData = await redditResponse.json();
             console.log(`Successfully fetched Reddit data for crypto symbol: ${symbol}`);
@@ -867,8 +867,8 @@ Please provide a valid crypto symbol for analysis.`;
           console.log(`Fetching market intelligence for crypto symbol: ${symbol}`);
 
           // Add timeout to prevent hanging
-          const marketIntelPromise = fetch(`/finsight-ai/api/market-intelligence?symbol=${symbol}&type=comprehensive`);
-          const marketAlertsPromise = fetch(`/finsight-ai/api/market-intelligence?symbol=${symbol}&type=alerts`);
+          const marketIntelPromise = fetch(`/api/market-intelligence?symbol=${symbol}&type=comprehensive`);
+          const marketAlertsPromise = fetch(`/api/market-intelligence?symbol=${symbol}&type=alerts`);
 
           // Race the promises with a timeout
           const timeoutPromise = new Promise((_, reject) =>

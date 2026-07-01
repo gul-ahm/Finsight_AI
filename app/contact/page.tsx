@@ -32,7 +32,7 @@ export default function ContactPage() {
 
     // Check if the API URL is defined
     // Use local API route
-    const apiUrl = "/finsight-ai/api/contact";
+    const apiUrl = "/api/contact";
 
     const formDataToSend = {
       name: formData.name,

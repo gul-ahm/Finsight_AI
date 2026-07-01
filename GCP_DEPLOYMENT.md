@@ -172,7 +172,7 @@ Once the initial build begins, navigate to your Cloud Run service and configure 
 | :--- | :--- |
 | `DATABASE_URL` | Your Supabase or Aiven database connection URI string |
 | `NEXTAUTH_SECRET` | A random 32-character security key |
-| `NEXTAUTH_URL` | Your Cloud Run URL (e.g., `https://finsight-ai-xxxxxx.a.run.app/finsight-ai`) |
+| `NEXTAUTH_URL` | Your Cloud Run URL (e.g., `https://finsight-ai-xxxxxx.a.run.app`) |
 | `TWELVE_DATA_API_KEY` | Your Twelve Data API Key |
 | `NEWSAPI_API_KEY` | Your NewsAPI Key |
 | `TAVILY_API_KEY` | Your Tavily Search API Key |
@@ -191,4 +191,4 @@ Before users can log in, push your schema migrations directly to your production
    npx prisma db push --schema=./backend/prisma/schema.prisma
    ```
 3. Once completed, revert your local `.env` back to `file:./dev.db` for local development safety.
-4. Access your GCP Cloud Run service URL (e.g., `https://[your-service-url]/finsight-ai`) and enjoy your live production project!
+4. Access your GCP Cloud Run service URL (e.g., `https://[your-service-url]`) and enjoy your live production project!

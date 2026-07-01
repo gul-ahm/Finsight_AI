@@ -3,7 +3,7 @@ const nextConfig = {
   // Enable React strict mode
   reactStrictMode: true,
   output: 'standalone',
-  basePath: '/finsight-ai', // Host at analyticsdev.xyz/finsight-ai
+  // basePath: '/finsight-ai', // Commented out to host on root (/)
 
   // Optimize images
   images: {

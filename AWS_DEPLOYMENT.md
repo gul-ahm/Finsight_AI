@@ -38,7 +38,7 @@ Amplify will automatically detect that this is a **Next.js** application.
 | :--- | :--- |
 | `DATABASE_URL` | `postgresql://postgres:Saniya%402820@db.swhiszeosmfnclhqmpnn.supabase.co:5432/postgres` |
 | `NEXTAUTH_SECRET` | `replace_this_with_a_random_long_string` |
-| `NEXTAUTH_URL` | Your AWS Amplify URL (you will update this once the URL is generated, e.g., `https://main.dxxxxxxxxxx.amplifyapp.com/finsight-ai`) |
+| `NEXTAUTH_URL` | Your AWS Amplify URL (you will update this once the URL is generated, e.g., `https://main.dxxxxxxxxxx.amplifyapp.com`) |
 | `TWELVE_DATA_API_KEY` | `7b806b51e3b84f8583cae9040b4e1ef3` |
 | `NEWSAPI_API_KEY` | `c2d5aa36b3fc489589c2a5bc67b32a3a` |
 | `TAVILY_API_KEY` | `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` |
@@ -61,7 +61,7 @@ Once deployment succeeds, Amplify will provide you with a live URL (e.g., `https
 
 1. Copy this URL.
 2. In the AWS Amplify dashboard, navigate to **App settings** -> **Environment variables**.
-3. Edit the `NEXTAUTH_URL` variable to point to your live URL with the sub-path `/finsight-ai`:
-   * Example: `https://main.d123456789abcd.amplifyapp.com/finsight-ai`
+3. Edit the `NEXTAUTH_URL` variable to point to your live URL:
+   * Example: `https://main.d123456789abcd.amplifyapp.com`
 4. Re-run a build (click **Redeploy version**) to ensure NextAuth updates the redirect callbacks.
 5. Your portfolio project is now live on the internet!

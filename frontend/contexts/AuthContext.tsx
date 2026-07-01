@@ -8,7 +8,7 @@ export interface AuthContextProps {
 
 export default function AuthContext({ children }: AuthContextProps) {
   return (
-    <SessionProvider basePath="/finsight-ai/api/auth">
+    <SessionProvider basePath="/api/auth">
       {children}
     </SessionProvider>
   );

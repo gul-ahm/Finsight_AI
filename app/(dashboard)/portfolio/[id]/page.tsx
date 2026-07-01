@@ -78,7 +78,7 @@ export default function PortfolioDetailPage() {
 
     setAdding(true);
     try {
-      const response = await fetch(`/finsight-ai/api/portfolios/${params.id}/holdings`, {
+      const response = await fetch(`/api/portfolios/${params.id}/holdings`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -127,7 +127,7 @@ export default function PortfolioDetailPage() {
     }
 
     try {
-      const response = await fetch(`/finsight-ai/api/portfolios/${params.id}/holdings?holdingId=${holdingId}`, {
+      const response = await fetch(`/api/portfolios/${params.id}/holdings?holdingId=${holdingId}`, {
         method: 'DELETE',
       });
 

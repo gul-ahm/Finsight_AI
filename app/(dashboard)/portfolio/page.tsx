@@ -80,7 +80,7 @@ export default function PortfolioPage() {
 
     setCreating(true);
     try {
-      const res = await fetch("/finsight-ai/api/portfolio", {
+      const res = await fetch("/api/portfolio", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

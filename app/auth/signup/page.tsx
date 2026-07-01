@@ -106,7 +106,7 @@ export default function SignUpPage() {
 
     try {
       // Call API to create user
-      const response = await fetch('/finsight-ai/api/auth/signup', {
+      const response = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

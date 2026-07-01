@@ -197,7 +197,7 @@ export default function ForexDetails() {
       setLoading(true);
       try {
         console.log(`Fetching data for symbol: ${symbol}`);
-        const overviewResponse = await fetch(`/finsight-ai/api/overview?symbol=${symbol}`);
+        const overviewResponse = await fetch(`/api/overview?symbol=${symbol}`);
         if (!overviewResponse.ok) {
           const errorData = await overviewResponse.json();
           throw new Error(errorData.error || "Failed to fetch overview data");
@@ -206,7 +206,7 @@ export default function ForexDetails() {
         console.log("Overview data:", overviewData);
         setOverview(overviewData);
 
-        const forexResponse = await fetch(`/finsight-ai/api/forex?symbol=${symbol}`);
+        const forexResponse = await fetch(`/api/forex?symbol=${symbol}`);
         if (!forexResponse.ok) {
           const errorData = await forexResponse.json();
           throw new Error(errorData.error || "Failed to fetch forex data");
@@ -215,7 +215,7 @@ export default function ForexDetails() {
         console.log("Forex data:", forexData);
         setForexData(forexData);
 
-        const indicatorsResponse = await fetch(`/finsight-ai/api/forex-technical-indicators?symbol=${symbol}`);
+        const indicatorsResponse = await fetch(`/api/forex-technical-indicators?symbol=${symbol}`);
         if (!indicatorsResponse.ok) {
           const errorData = await indicatorsResponse.json();
           throw new Error(errorData.error || "Failed to fetch technical indicators");

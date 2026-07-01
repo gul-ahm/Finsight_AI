@@ -31,7 +31,7 @@ test.describe('Main user flow', () => {
     });
 
     await page.goto('/');
-    const resp = await page.request.get('/finsight-ai/api/news?q=finance&pageSize=1');
+    const resp = await page.request.get('/api/news?q=finance&pageSize=1');
     expect(resp.status()).toBe(500);
     const data = await resp.json();
     expect(data.error).toBeDefined();

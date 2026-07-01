@@ -70,7 +70,7 @@ async function fetchForexPairs(apiCallCount: { count: number }): Promise<any[]> 
     return cachedData.data;
   }
 
-  const url = "/finsight-ai/api/forexs?page=1&perPage=1000¤cyGroup=All";
+  const url = "/api/forexs?page=1&perPage=1000¤cyGroup=All";
   const response = await fetchWithRetry(url);
   apiCallCount.count += 1;
   if (apiCallCount.count > API_CALL_THRESHOLD) {
@@ -920,7 +920,7 @@ Please provide a valid forex pair for analysis.`;
 
       // Fetch Reddit sentiment data
       try {
-        const redditResponse = await fetch(`/finsight-ai/api/reddit?symbol=${symbol}`);
+        const redditResponse = await fetch(`/api/reddit?symbol=${symbol}`);
         if (redditResponse.ok) {
           redditData = await redditResponse.json();
           console.log(`Successfully fetched Reddit data for forex pair: ${symbol}`);
@@ -940,8 +940,8 @@ Please provide a valid forex pair for analysis.`;
           console.log(`Fetching market intelligence for forex pair: ${symbol}`);
 
           // Add timeout to prevent hanging
-          const marketIntelPromise = fetch(`/finsight-ai/api/market-intelligence?symbol=${symbol}&type=comprehensive`);
-          const marketAlertsPromise = fetch(`/finsight-ai/api/market-intelligence?symbol=${symbol}&type=alerts`);
+          const marketIntelPromise = fetch(`/api/market-intelligence?symbol=${symbol}&type=comprehensive`);
+          const marketAlertsPromise = fetch(`/api/market-intelligence?symbol=${symbol}&type=alerts`);
 
           // Race the promises with a timeout
           const timeoutPromise = new Promise((_, reject) =>

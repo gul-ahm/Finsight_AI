@@ -179,7 +179,7 @@ export default function StockDetails() {
       try {
         // Fetch overview data (US stocks only)
         try {
-          const overviewResponse = await fetch(`/finsight-ai/api/overview?symbol=${symbol}`);
+          const overviewResponse = await fetch(`/api/overview?symbol=${symbol}`);
           if (overviewResponse.ok) {
             const overviewData = await overviewResponse.json();
             setOverview(overviewData);
@@ -190,7 +190,7 @@ export default function StockDetails() {
         }
 
         // Fetch stock data using Alpha Vantage-backed endpoint
-        const stockResponse = await fetch(`/finsight-ai/api/stocks?symbol=${symbol}`);
+        const stockResponse = await fetch(`/api/stocks?symbol=${symbol}`);
         if (stockResponse.ok) {
           const stockJson = await stockResponse.json();
           setStockData(stockJson);
@@ -202,7 +202,7 @@ export default function StockDetails() {
 
         // Fetch technical indicators
         try {
-          const indicatorsResponse = await fetch(`/finsight-ai/api/technical-indicators?symbol=${symbol}`);
+          const indicatorsResponse = await fetch(`/api/technical-indicators?symbol=${symbol}`);
           if (indicatorsResponse.ok) {
             const indicatorsData = await indicatorsResponse.json();
             setTechnicalIndicators(indicatorsData);

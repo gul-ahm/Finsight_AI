@@ -31,7 +31,7 @@ export const metadata: Metadata = {
       },
     ],
   },
-  manifest: '/finsight-ai/manifest.json',
+  manifest: '/manifest.json',
 };
 
 export const viewport: Viewport = {

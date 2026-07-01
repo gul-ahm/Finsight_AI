@@ -908,7 +908,7 @@ Let me provide analysis with the stock data I was able to fetch.`;
 
       // Fetch Reddit sentiment data
       try {
-        const redditResponse = await fetch(`/finsight-ai/api/reddit?symbol=${symbol}`);
+        const redditResponse = await fetch(`/api/reddit?symbol=${symbol}`);
         if (redditResponse.ok) {
           redditData = await redditResponse.json();
           console.log(`Successfully fetched Reddit data for symbol: ${symbol}`);
@@ -926,7 +926,7 @@ Let me provide analysis with the stock data I was able to fetch.`;
       if (needsComprehensiveAnalysis || input.toLowerCase().includes("analyz") || input.toLowerCase().includes("report") || input.toLowerCase().includes("research")) {
         try {
           console.log(`Fetching market intelligence for symbol: ${symbol}`);
-          const marketIntelResponse = await fetch(`/finsight-ai/api/market-intelligence?symbol=${symbol}&type=comprehensive`);
+          const marketIntelResponse = await fetch(`/api/market-intelligence?symbol=${symbol}&type=comprehensive`);
           if (marketIntelResponse.ok) {
             marketIntelligence = await marketIntelResponse.json();
             console.log(`Successfully fetched market intelligence for symbol: ${symbol}`);
@@ -939,7 +939,7 @@ Let me provide analysis with the stock data I was able to fetch.`;
           }
 
           // Fetch market alerts for risk awareness
-          const marketAlertsResponse = await fetch(`/finsight-ai/api/market-intelligence?symbol=${symbol}&type=alerts`);
+          const marketAlertsResponse = await fetch(`/api/market-intelligence?symbol=${symbol}&type=alerts`);
           if (marketAlertsResponse.ok) {
             marketAlerts = await marketAlertsResponse.json();
             console.log(`Successfully fetched market alerts for symbol: ${symbol}`);

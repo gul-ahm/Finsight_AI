@@ -123,7 +123,7 @@ export default function APITestPage() {
                 </div>
                 <Button
                   onClick={() =>
-                    testAPI("/finsight-ai/api/portfolio", "POST", {
+                    testAPI("/api/portfolio", "POST", {
                       name: portfolioName,
                       description: portfolioDesc,
                     })
@@ -138,7 +138,7 @@ export default function APITestPage() {
             <Card className="p-6">
               <h2 className="text-2xl font-bold mb-4">2. List Portfolios</h2>
               <Button
-                onClick={() => testAPI("/finsight-ai/api/portfolio", "GET")}
+                onClick={() => testAPI("/api/portfolio", "GET")}
                 disabled={loading}
               >
                 {loading ? <Loader2 className="animate-spin" /> : "Get All Portfolios"}
@@ -195,7 +195,7 @@ export default function APITestPage() {
                 </div>
                 <Button
                   onClick={() =>
-                    testAPI(`/finsight-ai/api/portfolio/${portfolioId}/holdings`, "POST", {
+                    testAPI(`/api/portfolio/${portfolioId}/holdings`, "POST", {
                       symbol,
                       assetType: "stock",
                       quantity: Number(quantity),
@@ -222,7 +222,7 @@ export default function APITestPage() {
                   />
                 </div>
                 <Button
-                  onClick={() => testAPI(`/finsight-ai/api/portfolio/${portfolioId}`, "GET")}
+                  onClick={() => testAPI(`/api/portfolio/${portfolioId}`, "GET")}
                   disabled={loading || !portfolioId}
                 >
                   {loading ? <Loader2 className="animate-spin" /> : "Get Portfolio"}
@@ -242,7 +242,7 @@ export default function APITestPage() {
                   />
                 </div>
                 <Button
-                  onClick={() => testAPI(`/finsight-ai/api/portfolio/${portfolioId}`, "DELETE")}
+                  onClick={() => testAPI(`/api/portfolio/${portfolioId}`, "DELETE")}
                   disabled={loading || !portfolioId}
                   variant="destructive"
                 >
@@ -267,7 +267,7 @@ export default function APITestPage() {
                 </div>
                 <Button
                   onClick={() =>
-                    testAPI("/finsight-ai/api/watchlist", "POST", { name: watchlistName })
+                    testAPI("/api/watchlist", "POST", { name: watchlistName })
                   }
                   disabled={loading}
                 >
@@ -279,7 +279,7 @@ export default function APITestPage() {
             <Card className="p-6">
               <h2 className="text-2xl font-bold mb-4">2. List Watchlists</h2>
               <Button
-                onClick={() => testAPI("/finsight-ai/api/watchlist", "GET")}
+                onClick={() => testAPI("/api/watchlist", "GET")}
                 disabled={loading}
               >
                 {loading ? <Loader2 className="animate-spin" /> : "Get All Watchlists"}
@@ -307,7 +307,7 @@ export default function APITestPage() {
                 </div>
                 <Button
                   onClick={() =>
-                    testAPI(`/finsight-ai/api/watchlist/${watchlistId}`, "POST", {
+                    testAPI(`/api/watchlist/${watchlistId}`, "POST", {
                       symbol,
                       assetType: "stock",
                       notes: "Test asset",
@@ -332,7 +332,7 @@ export default function APITestPage() {
                   />
                 </div>
                 <Button
-                  onClick={() => testAPI(`/finsight-ai/api/watchlist/${watchlistId}`, "DELETE")}
+                  onClick={() => testAPI(`/api/watchlist/${watchlistId}`, "DELETE")}
                   disabled={loading || !watchlistId}
                   variant="destructive"
                 >

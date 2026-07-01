@@ -63,7 +63,7 @@ export function AddToPortfolioDialog({
   const fetchPortfolios = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/finsight-ai/api/portfolio");
+      const res = await fetch("/api/portfolio");
       if (res.ok) {
         const data = await res.json();
         setPortfolios(data);
@@ -108,7 +108,7 @@ export function AddToPortfolioDialog({
 
     setAdding(true);
     try {
-      const res = await fetch(`/finsight-ai/api/portfolio/${selectedPortfolio}/holdings`, {
+      const res = await fetch(`/api/portfolio/${selectedPortfolio}/holdings`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

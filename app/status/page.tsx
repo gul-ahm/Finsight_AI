@@ -15,7 +15,7 @@ export default function StatusPage() {
         setLoading(true);
         try {
             // Validating Frontend -> Backend Connection
-            const res = await fetch('/finsight-ai/api/health');
+            const res = await fetch('/api/health');
             if (!res.ok) throw new Error('API Unreachable');
             const json = await res.json();
             setData(json);

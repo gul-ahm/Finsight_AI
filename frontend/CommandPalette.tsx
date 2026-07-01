@@ -116,8 +116,8 @@ export function CommandPalette() {
     setLoading(true);
     try {
       const [portfoliosRes, watchlistsRes] = await Promise.all([
-        fetch("/finsight-ai/api/portfolio"),
-        fetch("/finsight-ai/api/watchlist"),
+        fetch("/api/portfolio"),
+        fetch("/api/watchlist"),
       ]);
 
       if (portfoliosRes.ok) {
@@ -142,7 +142,7 @@ export function CommandPalette() {
 
       // Fetch stocks
       try {
-        const stocksRes = await fetch("/finsight-ai/api/stocks");
+        const stocksRes = await fetch("/api/stocks");
         if (stocksRes.ok) {
           const stocksData = await stocksRes.json();
           const stocks = Array.isArray(stocksData) ? stocksData : [];
@@ -161,7 +161,7 @@ export function CommandPalette() {
 
       // Fetch forex
       try {
-        const forexRes = await fetch("/finsight-ai/api/forexs?page=1&perPage=100");
+        const forexRes = await fetch("/api/forexs?page=1&perPage=100");
         if (forexRes.ok) {
           const forexData = await forexRes.json();
           const pairs = forexData.pairs || forexData || [];
@@ -179,7 +179,7 @@ export function CommandPalette() {
 
       // Fetch crypto
       try {
-        const cryptoRes = await fetch("/finsight-ai/api/cryptos");
+        const cryptoRes = await fetch("/api/cryptos");
         if (cryptoRes.ok) {
           const cryptoData = await cryptoRes.json();
           const crypto = Array.isArray(cryptoData) ? cryptoData : [];

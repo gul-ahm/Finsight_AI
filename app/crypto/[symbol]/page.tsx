@@ -244,7 +244,7 @@ export default function CryptoDetails() {
         console.log(`Fetching data for symbol: ${symbol}`);
 
         // Fetch Overview Data
-        const overviewResponse = await fetchWithRetry(`/finsight-ai/api/overview?symbol=${symbol}`);
+        const overviewResponse = await fetchWithRetry(`/api/overview?symbol=${symbol}`);
         if (!overviewResponse.ok) {
           const contentType = overviewResponse.headers.get("content-type");
           let errorMessage = `Failed to fetch overview data: ${overviewResponse.status} ${overviewResponse.statusText}`;
@@ -258,7 +258,7 @@ export default function CryptoDetails() {
         setOverview(overviewData);
 
         // Fetch Crypto Data
-        const cryptoResponse = await fetchWithRetry(`/finsight-ai/api/crypto?symbol=${symbol}`);
+        const cryptoResponse = await fetchWithRetry(`/api/crypto?symbol=${symbol}`);
         if (!cryptoResponse.ok) {
           const contentType = cryptoResponse.headers.get("content-type");
           let errorMessage = `Failed to fetch crypto data: ${cryptoResponse.status} ${cryptoResponse.statusText}`;
@@ -275,7 +275,7 @@ export default function CryptoDetails() {
         setCryptoData(cryptoData);
 
         // Fetch Technical Indicators
-        const indicatorsResponse = await fetchWithRetry(`/finsight-ai/api/crypto-technical-indicators?symbol=${symbol}`);
+        const indicatorsResponse = await fetchWithRetry(`/api/crypto-technical-indicators?symbol=${symbol}`);
         if (!indicatorsResponse.ok) {
           const contentType = indicatorsResponse.headers.get("content-type");
           let errorMessage = `Failed to fetch technical indicators: ${indicatorsResponse.status} ${indicatorsResponse.statusText}`;

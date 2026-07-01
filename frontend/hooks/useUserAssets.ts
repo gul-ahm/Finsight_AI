@@ -24,14 +24,14 @@ export function useUserAssets() {
   const fetchUserAssets = async () => {
     try {
       // Fetch watchlist
-      const watchlistResponse = await fetch('/finsight-ai/api/user/watchlist');
+      const watchlistResponse = await fetch('/api/user/watchlist');
       if (watchlistResponse.ok) {
         const watchlistData = await watchlistResponse.json();
         setWatchlist(watchlistData.watchlist);
       }
 
       // Fetch tracked assets
-      const trackedAssetsResponse = await fetch('/finsight-ai/api/user/tracked-assets');
+      const trackedAssetsResponse = await fetch('/api/user/tracked-assets');
       if (trackedAssetsResponse.ok) {
         const trackedAssetsData = await trackedAssetsResponse.json();
         setTrackedAssets(trackedAssetsData.trackedAssets);
@@ -51,7 +51,7 @@ export function useUserAssets() {
       setWatchlist(prev => [...prev, symbol]);
 
       // Call API to persist this
-      const response = await fetch('/finsight-ai/api/user/watchlist', {
+      const response = await fetch('/api/user/watchlist', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -77,7 +77,7 @@ export function useUserAssets() {
       setWatchlist(prev => prev.filter(item => item !== symbol));
 
       // Call API to persist this
-      const response = await fetch(`/finsight-ai/api/user/watchlist?symbol=${symbol}`, {
+      const response = await fetch(`/api/user/watchlist?symbol=${symbol}`, {
         method: 'DELETE',
       });
 
@@ -99,7 +99,7 @@ export function useUserAssets() {
       setTrackedAssets(prev => [...prev, asset]);
 
       // Call API to persist this
-      const response = await fetch('/finsight-ai/api/user/tracked-assets', {
+      const response = await fetch('/api/user/tracked-assets', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -125,7 +125,7 @@ export function useUserAssets() {
       setTrackedAssets(prev => prev.filter(item => item.symbol !== symbol));
 
       // Call API to persist this
-      const response = await fetch(`/finsight-ai/api/user/tracked-assets?symbol=${symbol}`, {
+      const response = await fetch(`/api/user/tracked-assets?symbol=${symbol}`, {
         method: 'DELETE',
       });
 

@@ -79,10 +79,10 @@ export function SymbolSearch({
       setSearching(true);
       try {
         const [stocks, cryptos] = await Promise.all([
-          fetch(`/finsight-ai/api/stocks?search=${encodeURIComponent(value)}`).then((r) =>
+          fetch(`/api/stocks?search=${encodeURIComponent(value)}`).then((r) =>
             r.ok ? r.json() : { data: [] }
           ),
-          fetch(`/finsight-ai/api/cryptos?search=${encodeURIComponent(value)}`).then((r) =>
+          fetch(`/api/cryptos?search=${encodeURIComponent(value)}`).then((r) =>
             r.ok ? r.json() : { data: [] }
           ),
         ]);

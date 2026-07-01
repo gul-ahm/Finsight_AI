@@ -113,7 +113,7 @@ export default function News() {
 
       try {
         for (const query of effectiveQueries) {
-          const url = `/finsight-ai/api/news?q=${encodeURIComponent(query + " -crypto -cryptocurrency -bitcoin -ethereum")}&pageSize=100`; // Max fetch
+          const url = `/api/news?q=${encodeURIComponent(query + " -crypto -cryptocurrency -bitcoin -ethereum")}&pageSize=100`; // Max fetch
           const response = await fetch(url);
           if (!response.ok) continue;
           const data = await response.json();

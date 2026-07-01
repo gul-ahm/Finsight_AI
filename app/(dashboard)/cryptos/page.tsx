@@ -119,7 +119,7 @@ export default function CryptoList() {
   const fetchCryptoPairs = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await fetch(`/finsight-ai/api/cryptos`);
+      const response = await fetch(`/api/cryptos`);
 
       if (!response.ok) {
         const errorData = await response.json();

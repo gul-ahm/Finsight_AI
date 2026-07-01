@@ -74,7 +74,7 @@ export function AddToWatchlistDialog({
   const fetchWatchlists = async () => {
     setFetchingWatchlists(true);
     try {
-      const response = await fetch("/finsight-ai/api/watchlist");
+      const response = await fetch("/api/watchlist");
       if (response.ok) {
         const data = await response.json();
         setWatchlists(data);
@@ -111,7 +111,7 @@ export function AddToWatchlistDialog({
     }
 
     try {
-      const response = await fetch("/finsight-ai/api/watchlist", {
+      const response = await fetch("/api/watchlist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: newWatchlistName.trim() }),
@@ -168,7 +168,7 @@ export function AddToWatchlistDialog({
     setLoading(true);
     try {
       const response = await fetch(
-        `/finsight-ai/api/watchlist/${selectedWatchlistId}`,
+        `/api/watchlist/${selectedWatchlistId}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

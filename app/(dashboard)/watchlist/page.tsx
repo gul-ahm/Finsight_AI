@@ -82,7 +82,7 @@ export default function WatchlistPage() {
 
   const fetchWatchlists = async () => {
     try {
-      const res = await fetch("/finsight-ai/api/watchlist");
+      const res = await fetch("/api/watchlist");
       if (res.ok) {
         const data = await res.json();
         setWatchlists(data);
@@ -115,7 +115,7 @@ export default function WatchlistPage() {
 
     setCreating(true);
     try {
-      const res = await fetch("/finsight-ai/api/watchlist", {
+      const res = await fetch("/api/watchlist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: newWatchlistName.trim() }),
@@ -157,7 +157,7 @@ export default function WatchlistPage() {
 
     try {
       const res = await fetch(
-        `/finsight-ai/api/watchlist/${watchlistId}/assets/${symbol}`,
+        `/api/watchlist/${watchlistId}/assets/${symbol}`,
         { method: "DELETE" }
       );
 
@@ -189,7 +189,7 @@ export default function WatchlistPage() {
     if (!editWatchlistName.trim() || !selectedWatchlistId) return;
 
     try {
-      const res = await fetch(`/finsight-ai/api/watchlist/${selectedWatchlistId}`, {
+      const res = await fetch(`/api/watchlist/${selectedWatchlistId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: editWatchlistName.trim() }),
@@ -224,7 +224,7 @@ export default function WatchlistPage() {
     if (!watchlistToDelete) return;
 
     try {
-      const res = await fetch(`/finsight-ai/api/watchlist/${watchlistToDelete}`, {
+      const res = await fetch(`/api/watchlist/${watchlistToDelete}`, {
         method: "DELETE",
       });
 
