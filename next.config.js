@@ -16,7 +16,12 @@ const nextConfig = {
     GROQ_API_KEY: process.env.GROQ_API_KEY,
     TWELVE_DATA_API_KEY: process.env.TWELVE_DATA_API_KEY,
     NEWSAPI_API_KEY: process.env.NEWSAPI_API_KEY,
+    NEWS_API_KEY: process.env.NEWS_API_KEY,
     TAVILY_API_KEY: process.env.TAVILY_API_KEY,
+    ALPHA_VANTAGE_API_KEY: process.env.ALPHA_VANTAGE_API_KEY,
+    NEXT_PUBLIC_TWELVEDATA_API_KEY: process.env.NEXT_PUBLIC_TWELVEDATA_API_KEY || process.env.TWELVE_DATA_API_KEY,
+    NEXT_PUBLIC_GROK_API_KEY: process.env.NEXT_PUBLIC_GROK_API_KEY || process.env.GROQ_API_KEY,
+    NEXT_PUBLIC_TAVILY_API_KEY: process.env.NEXT_PUBLIC_TAVILY_API_KEY || process.env.TAVILY_API_KEY,
   },
 
   // Optimize images

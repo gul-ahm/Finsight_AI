@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
+import { authOptions } from '@/backend/auth';
 import { prisma } from '@/backend/db';
 import { withRateLimit, errorResponse } from '@/backend/api-middleware';
 import { RATE_LIMITS } from '@/backend/rate-limiter';
@@ -11,7 +12,7 @@ import { WatchlistSchema } from '@/backend/validators';
  */
 async function getWatchlists(request: Request) {
   try {
-    const session = await getServerSession();
+    const session = await getServerSession(authOptions);
 
     if (!session?.user?.email) {
       return errorResponse('Unauthorized', 401);
@@ -42,7 +43,7 @@ async function getWatchlists(request: Request) {
  */
 async function createWatchlist(request: Request) {
   try {
-    const session = await getServerSession();
+    const session = await getServerSession(authOptions);
 
     if (!session?.user?.email) {
       return errorResponse('Unauthorized', 401);

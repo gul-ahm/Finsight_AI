@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
+import { authOptions } from '@/backend/auth';
 import { prisma } from '@/backend/db';
 import { withRateLimit, errorResponse } from '@/backend/api-middleware';
 import { RATE_LIMITS } from '@/backend/rate-limiter';
@@ -13,7 +14,7 @@ async function getPortfolio(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession();
+    const session = await getServerSession(authOptions);
 
     if (!session?.user?.email) {
       return errorResponse('Unauthorized', 401);
@@ -51,7 +52,7 @@ async function updatePortfolio(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession();
+    const session = await getServerSession(authOptions);
 
     if (!session?.user?.email) {
       return errorResponse('Unauthorized', 401);
@@ -96,7 +97,7 @@ async function deletePortfolio(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession();
+    const session = await getServerSession(authOptions);
 
     if (!session?.user?.email) {
       return errorResponse('Unauthorized', 401);
