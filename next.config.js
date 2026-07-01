@@ -5,6 +5,20 @@ const nextConfig = {
   // output: 'standalone', // Commented out to reduce deployment size on AWS Amplify
   // basePath: '/finsight-ai', // Commented out to host on root (/)
 
+  env: {
+    DATABASE_URL: process.env.DATABASE_URL,
+    NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
+    NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+    GITHUB_ID: process.env.GITHUB_ID,
+    GITHUB_SECRET: process.env.GITHUB_SECRET,
+    GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+    GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+    GROQ_API_KEY: process.env.GROQ_API_KEY,
+    TWELVE_DATA_API_KEY: process.env.TWELVE_DATA_API_KEY,
+    NEWSAPI_API_KEY: process.env.NEWSAPI_API_KEY,
+    TAVILY_API_KEY: process.env.TAVILY_API_KEY,
+  },
+
   // Optimize images
   images: {
     formats: ['image/webp', 'image/avif'],
