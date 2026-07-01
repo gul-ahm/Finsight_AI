@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate --schema=./backend/prisma/schema.prisma && next build && rm -rf .next/cache",
+    "build": "prisma generate --schema=./backend/prisma/schema.prisma && next build && npm prune --omit=dev && rm -rf .next/cache && rm -rf node_modules/.cache && rm -rf node_modules/prisma && rm -rf node_modules/@prisma/engines",
     "start": "next start -H 0.0.0.0 -p ${PORT:-10000}",
     "lint": "next lint",
     "test": "jest",
