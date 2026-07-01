@@ -7,6 +7,7 @@ import { verifyPassword, isValidEmailDomain } from './auth-utils';
 
 // Define the NextAuth options
 export const authOptions: NextAuthOptions = {
+  secret: process.env.NEXTAUTH_SECRET,
   // Configure authentication providers
   providers: [
     GoogleProvider({
