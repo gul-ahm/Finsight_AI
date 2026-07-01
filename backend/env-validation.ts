@@ -17,6 +17,10 @@ const optionalEnvVars = [
   'TAVILY_API_KEY',
   'REDDIT_CLIENT_ID',
   'REDDIT_CLIENT_SECRET',
+  'GITHUB_ID',
+  'GITHUB_SECRET',
+  'GOOGLE_CLIENT_ID',
+  'GOOGLE_CLIENT_SECRET',
 ] as const;
 
 interface ValidationResult {
