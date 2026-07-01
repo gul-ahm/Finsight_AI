@@ -6,6 +6,14 @@ frontend:
         - npm ci --cache .npm --prefer-offline
     build:
       commands:
+        - echo "DATABASE_URL=$DATABASE_URL" >> .env.production
+        - echo "NEXTAUTH_SECRET=$NEXTAUTH_SECRET" >> .env.production
+        - echo "NEXTAUTH_URL=$NEXTAUTH_URL" >> .env.production
+        - echo "GITHUB_ID=$GITHUB_ID" >> .env.production
+        - echo "GITHUB_SECRET=$GITHUB_SECRET" >> .env.production
+        - echo "GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID" >> .env.production
+        - echo "GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET" >> .env.production
+        - echo "GROQ_API_KEY=$GROQ_API_KEY" >> .env.production
         - npm run build
   artifacts:
     baseDirectory: .next
