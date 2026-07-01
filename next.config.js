@@ -2,7 +2,7 @@
 const nextConfig = {
   // Enable React strict mode
   reactStrictMode: true,
-  output: 'standalone',
+  // output: 'standalone', // Commented out to reduce deployment size on AWS Amplify
   // basePath: '/finsight-ai', // Commented out to host on root (/)
 
   // Optimize images
