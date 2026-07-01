@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
       select: { symbol: true }
     });
 
-    return NextResponse.json({ watchlist: favorites.map(f => f.symbol) });
+    return NextResponse.json({ watchlist: favorites.map((f: { symbol: string }) => f.symbol) });
   } catch (error) {
     console.error('Error fetching watchlist:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
       select: { symbol: true }
     });
 
-    return NextResponse.json({ watchlist: favorites.map(f => f.symbol) });
+    return NextResponse.json({ watchlist: favorites.map((f: { symbol: string }) => f.symbol) });
   } catch (error) {
     console.error('Error adding to watchlist:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -92,7 +92,7 @@ export async function DELETE(request: NextRequest) {
       select: { symbol: true }
     });
 
-    return NextResponse.json({ watchlist: favorites.map(f => f.symbol) });
+    return NextResponse.json({ watchlist: favorites.map((f: { symbol: string }) => f.symbol) });
   } catch (error) {
     console.error('Error removing from watchlist:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
