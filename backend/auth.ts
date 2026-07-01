@@ -184,8 +184,8 @@ export const authOptions: NextAuthOptions = {
 
   // Configure pages
   pages: {
-    signIn: '/finsight-ai/auth/signin',
-    error: '/finsight-ai/auth/error', // Error code passed in query string as ?error=
+    signIn: '/auth/signin',
+    error: '/auth/error', // Error code passed in query string as ?error=
   },
 
   // Enable debug messages in development
