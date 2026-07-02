@@ -12,6 +12,10 @@ interface Stock {
   exchange: string;
   country: string;
   status: string;
+  price?: string;
+  change?: string;
+  percent_change?: string;
+  volume?: string;
 }
 
 // In-memory cache for stock listings
@@ -58,6 +62,30 @@ export async function GET(request: Request) {
     { symbol: 'AMD', name: 'Advanced Micro Devices, Inc.', currency: 'USD', exchange: 'NASDAQ', country: 'USA', status: 'Common Stock' },
     { symbol: 'INTC', name: 'Intel Corporation', currency: 'USD', exchange: 'NASDAQ', country: 'USA', status: 'Common Stock' },
   ];
+
+  // Try fetching batch quotes from Twelve Data to populate real-time values
+  const TWELVE_DATA_API_KEY = process.env.NEXT_PUBLIC_TWELVEDATA_API_KEY || process.env.TWELVE_DATA_API_KEY;
+  if (TWELVE_DATA_API_KEY) {
+    try {
+      const symbolsStr = stocks.map(s => s.symbol).join(',');
+      const url = `https://api.twelvedata.com/quote?symbol=${symbolsStr}&apikey=${TWELVE_DATA_API_KEY}`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const quotes = await res.json();
+        stocks.forEach(stock => {
+          const quote = quotes[stock.symbol];
+          if (quote) {
+            stock.price = quote.close || quote.price || undefined;
+            stock.change = quote.change || undefined;
+            stock.percent_change = quote.percent_change || undefined;
+            stock.volume = quote.volume || undefined;
+          }
+        });
+      }
+    } catch (err) {
+      console.warn("Failed to fetch batch quotes from Twelve Data:", err);
+    }
+  }
 
   const searchQuery = searchParams.get('search')?.toLowerCase();
 
