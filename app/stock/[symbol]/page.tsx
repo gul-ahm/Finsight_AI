@@ -28,13 +28,6 @@ import { BarChart3, ArrowRight, MessageCircle, MessageSquare, TrendingUp, Trendi
 import { RedditSocialSentiment } from '@/frontend/reddit-social-sentiment';
 import { marketThemes } from "@/backend/themes";
 
-// Viewport export to address Next.js metadata warnings (App Router)
-export const viewport = {
-  themeColor: '#0b1020',
-  width: 'device-width',
-  initialScale: 1,
-  colorScheme: 'dark light',
-};
 
 // Register Chart.js components
 ChartJS.register(
