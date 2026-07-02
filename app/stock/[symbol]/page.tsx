@@ -1104,9 +1104,9 @@ export default function StockDetails() {
                     <p className="text-sm text-muted-foreground">Current Price</p>
                     <div className="flex items-center mt-1">
                       <p className="text-2xl font-bold text-foreground">
-                        {stockData.price?.price ? `$${parseFloat(stockData.price.price).toFixed(2)}` : "N/A"}
+                        {stockData?.price?.price ? `$${parseFloat(stockData.price.price).toFixed(2)}` : "N/A"}
                       </p>
-                      {stockData.quote && (
+                      {stockData?.quote && (
                         <span className={`ml-2 flex items-center text-sm ${getTrendInfo(stockData.quote.change).color}`}>
                           {getTrendInfo(stockData.quote.change).icon}
                           <span className="ml-1">
@@ -1120,43 +1120,43 @@ export default function StockDetails() {
                   <div className="bg-accent/10 p-4 rounded-lg">
                     <p className="text-sm text-muted-foreground">52-Week Range</p>
                     <p className="text-xl font-bold text-foreground mt-1">
-                      ${parseFloat(stockData.quote.fifty_two_week?.low || "0").toFixed(2)} - ${parseFloat(stockData.quote.fifty_two_week?.high || "0").toFixed(2)}
+                      {stockData?.quote ? `$${parseFloat(stockData.quote.fifty_two_week?.low || "0").toFixed(2)} - $${parseFloat(stockData.quote.fifty_two_week?.high || "0").toFixed(2)}` : "N/A"}
                     </p>
                   </div>
 
                   <div className="bg-accent/10 p-4 rounded-lg">
                     <p className="text-sm text-muted-foreground">Volume</p>
                     <p className="text-xl font-bold text-foreground mt-1">
-                      {stockData.quote.volume != null ? formatNumber(parseInt(stockData.quote.volume)) : "N/A"}
+                      {stockData?.quote?.volume != null ? formatNumber(parseInt(stockData.quote.volume)) : "N/A"}
                     </p>
                   </div>
 
                   <div className="bg-accent/10 p-4 rounded-lg">
                     <p className="text-sm text-muted-foreground">Average Volume</p>
                     <p className="text-xl font-bold text-foreground mt-1">
-                      {stockData.quote.average_volume != null ? formatNumber(parseInt(stockData.quote.average_volume)) : "N/A"}
+                      {stockData?.quote?.average_volume != null ? formatNumber(parseInt(stockData.quote.average_volume)) : "N/A"}
                     </p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6 text-muted-foreground">
                   <div>
-                    <p><strong className="text-blue-500">EOD Price ({eodDateFormatted}):</strong> {stockData.eod?.close ? `$${parseFloat(stockData.eod.close).toFixed(2)}` : "N/A"}</p>
-                    <p><strong className="text-blue-500">Latest Close:</strong> ${parseFloat(stockData.quote.close || "0").toFixed(2)}</p>
-                    <p><strong className="text-blue-500">Latest Open:</strong> ${parseFloat(stockData.quote.open || "0").toFixed(2)}</p>
-                    <p><strong className="text-blue-500">Daily High:</strong> ${parseFloat(stockData.quote.high || "0").toFixed(2)}</p>
-                    <p><strong className="text-blue-500">Daily Low:</strong> ${parseFloat(stockData.quote.low || "0").toFixed(2)}</p>
+                    <p><strong className="text-blue-500">EOD Price ({eodDateFormatted}):</strong> {stockData?.eod?.close ? `$${parseFloat(stockData.eod.close).toFixed(2)}` : "N/A"}</p>
+                    <p><strong className="text-blue-500">Latest Close:</strong> {stockData?.quote?.close ? `$${parseFloat(stockData.quote.close).toFixed(2)}` : "N/A"}</p>
+                    <p><strong className="text-blue-500">Latest Open:</strong> {stockData?.quote?.open ? `$${parseFloat(stockData.quote.open).toFixed(2)}` : "N/A"}</p>
+                    <p><strong className="text-blue-500">Daily High:</strong> {stockData?.quote?.high ? `$${parseFloat(stockData.quote.high).toFixed(2)}` : "N/A"}</p>
+                    <p><strong className="text-blue-500">Daily Low:</strong> {stockData?.quote?.low ? `$${parseFloat(stockData.quote.low).toFixed(2)}` : "N/A"}</p>
                   </div>
                   <div>
-                    <p><strong className="text-blue-500">Previous Close:</strong> ${parseFloat(stockData.quote.previous_close || "0").toFixed(2)}</p>
-                    <p><strong className="text-blue-500">Change:</strong> {parseFloat(stockData.quote.change || "0").toFixed(2)} ({parseFloat(stockData.quote.percent_change || "0").toFixed(2)}%)</p>
-                    <p><strong className="text-blue-500">Volume:</strong> {stockData.quote.volume != null ? parseInt(stockData.quote.volume).toLocaleString("en-US") : "N/A"}</p>
-                    <p><strong className="text-blue-500">Average Volume:</strong> {stockData.quote.average_volume != null ? parseInt(stockData.quote.average_volume).toLocaleString("en-US") : "N/A"}</p>
+                    <p><strong className="text-blue-500">Previous Close:</strong> {stockData?.quote?.previous_close ? `$${parseFloat(stockData.quote.previous_close).toFixed(2)}` : "N/A"}</p>
+                    <p><strong className="text-blue-500">Change:</strong> {stockData?.quote ? `${parseFloat(stockData.quote.change || "0").toFixed(2)} (${parseFloat(stockData.quote.percent_change || "0").toFixed(2)}%)` : "N/A"}</p>
+                    <p><strong className="text-blue-500">Volume:</strong> {stockData?.quote?.volume != null ? parseInt(stockData.quote.volume).toLocaleString("en-US") : "N/A"}</p>
+                    <p><strong className="text-blue-500">Average Volume:</strong> {stockData?.quote?.average_volume != null ? parseInt(stockData.quote.average_volume).toLocaleString("en-US") : "N/A"}</p>
                   </div>
                   <div>
-                    <p><strong className="text-blue-500">52-Week Low Change:</strong> ${parseFloat(stockData.quote.fifty_two_week?.low_change || "0").toFixed(2)} ({parseFloat(stockData.quote.fifty_two_week?.low_change_percent || "0").toFixed(2)}%)</p>
-                    <p><strong className="text-blue-500">52-Week High Change:</strong> ${parseFloat(stockData.quote.fifty_two_week?.high_change || "0").toFixed(2)} ({parseFloat(stockData.quote.fifty_two_week?.high_change_percent || "0").toFixed(2)}%)</p>
-                    <p><strong className="text-blue-500">Exchange:</strong> {stockData.quote.exchange || "N/A"}</p>
+                    <p><strong className="text-blue-500">52-Week Low Change:</strong> {stockData?.quote?.fifty_two_week?.low_change ? `$${parseFloat(stockData.quote.fifty_two_week.low_change).toFixed(2)} (${parseFloat(stockData.quote.fifty_two_week.low_change_percent || "0").toFixed(2)}%)` : "N/A"}</p>
+                    <p><strong className="text-blue-500">52-Week High Change:</strong> {stockData?.quote?.fifty_two_week?.high_change ? `$${parseFloat(stockData.quote.fifty_two_week.high_change).toFixed(2)} (${parseFloat(stockData.quote.fifty_two_week.high_change_percent || "0").toFixed(2)}%)` : "N/A"}</p>
+                    <p><strong className="text-blue-500">Exchange:</strong> {stockData?.quote?.exchange || "N/A"}</p>
                   </div>
                 </div>
               </Card>
