@@ -21,7 +21,7 @@ interface Stock {
 // In-memory cache for stock listings
 let cachedStocks: Stock[] | null = null;
 let cacheTimestamp: number | null = null;
-const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+const CACHE_DURATION = 15 * 60 * 1000; // 15 minutes in milliseconds
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -49,7 +49,7 @@ export async function GET(request: Request) {
     return NextResponse.json(cachedStocks);
   }
 
-  // Provide a curated list of popular US stocks for listing
+  // Provide a curated list of popular US stocks for listing (limited to 7 to fit Twelve Data free rate-limit credit usage)
   const stocks: Stock[] = [
     { symbol: 'AAPL', name: 'Apple Inc.', currency: 'USD', exchange: 'NASDAQ', country: 'USA', status: 'Common Stock' },
     { symbol: 'MSFT', name: 'Microsoft Corporation', currency: 'USD', exchange: 'NASDAQ', country: 'USA', status: 'Common Stock' },
@@ -58,9 +58,6 @@ export async function GET(request: Request) {
     { symbol: 'META', name: 'Meta Platforms, Inc.', currency: 'USD', exchange: 'NASDAQ', country: 'USA', status: 'Common Stock' },
     { symbol: 'TSLA', name: 'Tesla, Inc.', currency: 'USD', exchange: 'NASDAQ', country: 'USA', status: 'Common Stock' },
     { symbol: 'NVDA', name: 'NVIDIA Corporation', currency: 'USD', exchange: 'NASDAQ', country: 'USA', status: 'Common Stock' },
-    { symbol: 'NFLX', name: 'Netflix, Inc.', currency: 'USD', exchange: 'NASDAQ', country: 'USA', status: 'Common Stock' },
-    { symbol: 'AMD', name: 'Advanced Micro Devices, Inc.', currency: 'USD', exchange: 'NASDAQ', country: 'USA', status: 'Common Stock' },
-    { symbol: 'INTC', name: 'Intel Corporation', currency: 'USD', exchange: 'NASDAQ', country: 'USA', status: 'Common Stock' },
   ];
 
   // Try fetching batch quotes from Twelve Data to populate real-time values
