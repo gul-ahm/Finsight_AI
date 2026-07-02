@@ -56,7 +56,12 @@ export function SymbolSearch({
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      const isDropdownClick = (event.target as Element).closest('.symbol-search-dropdown');
+      if (
+        containerRef.current && 
+        !containerRef.current.contains(event.target as Node) &&
+        !isDropdownClick
+      ) {
         setOpen(false);
       }
     };
@@ -163,7 +168,7 @@ export function SymbolSearch({
         width: `${dropdownPosition.width}px`,
         zIndex: 9999,
       }}
-      className="bg-popover border rounded-md shadow-lg max-h-[300px] overflow-y-auto"
+      className="bg-popover border rounded-md shadow-lg max-h-[300px] overflow-y-auto symbol-search-dropdown"
     >
       <div className="p-2">
         <div className="text-xs font-medium text-muted-foreground px-2 py-1.5">
