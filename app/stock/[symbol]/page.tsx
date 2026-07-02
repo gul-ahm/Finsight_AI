@@ -22,7 +22,6 @@ import {
   ScriptableContext,
 } from "chart.js";
 import { Chart, Line } from "react-chartjs-2";
-import annotationPlugin from "chartjs-plugin-annotation";
 import Image from "next/image";
 import { BarChart3, ArrowRight, MessageCircle, MessageSquare, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { RedditSocialSentiment } from '@/frontend/reddit-social-sentiment';
@@ -39,9 +38,13 @@ ChartJS.register(
   BarController,
   Title,
   Tooltip,
-  Legend,
-  annotationPlugin
+  Legend
 );
+
+if (typeof window !== 'undefined') {
+  const annotationPlugin = require('chartjs-plugin-annotation');
+  ChartJS.register(annotationPlugin.default || annotationPlugin);
+}
 
 // Format large numbers with commas
 const formatNumber = (num: number | string | undefined): string => {
