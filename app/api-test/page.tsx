@@ -44,18 +44,19 @@ export default function APITestPage() {
 
       if (res.ok) {
         // Auto-extract IDs from response
-        if (data._id) {
+        const recordId = data.id || data._id;
+        if (recordId) {
           if (endpoint.includes('/portfolio') && !endpoint.includes('/watchlist')) {
-            setPortfolioId(data._id);
+            setPortfolioId(recordId);
             toast({
               title: "✅ Success",
-              description: `Portfolio ID copied: ${data._id.substring(0, 8)}...`,
+              description: `Portfolio ID copied: ${recordId.substring(0, 8)}...`,
             });
           } else if (endpoint.includes('/watchlist')) {
-            setWatchlistId(data._id);
+            setWatchlistId(recordId);
             toast({
               title: "✅ Success",
-              description: `Watchlist ID copied: ${data._id.substring(0, 8)}...`,
+              description: `Watchlist ID copied: ${recordId.substring(0, 8)}...`,
             });
           }
         } else {
