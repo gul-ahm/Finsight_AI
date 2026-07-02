@@ -190,7 +190,7 @@ export default function StockDetails() {
         }
 
         // Fetch stock data using Alpha Vantage-backed endpoint
-        const stockResponse = await fetch(`/api/stocks?symbol=${symbol}`);
+        const stockResponse = await fetch(`/api/stock?symbol=${symbol}`);
         if (stockResponse.ok) {
           const stockJson = await stockResponse.json();
           setStockData(stockJson);
