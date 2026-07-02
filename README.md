@@ -157,8 +157,8 @@ FinanceAI is a comprehensive financial analysis platform that combines real-time
 
 ```bash
 # Clone the repository
-git clone https://github.com/RobinMillford/Ai-Finance.git
-cd Ai-Finance
+git clone https://github.com/gul-ahm/Finsight_AI.git
+cd Finsight_AI
 
 # Install dependencies
 npm install
@@ -424,7 +424,7 @@ Please ensure:
 
 **Ahmed Gulzar**
 
-- LinkedIn: [Ahmed Gulzar](https://linkedin.com/in/ahmed-gulzar)
+- LinkedIn: [Ahmed Gulzar](https://linkedin.com/in/gul-ahm)
 - GitHub: [gul-ahm](https://github.com/gul-ahm)
 
 ### Binance + Alpha Vantage + News Endpoints
