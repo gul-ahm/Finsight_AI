@@ -1194,7 +1194,7 @@ export default function StockDetails() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {(technicalIndicators.ema?.ema20 || technicalIndicators.ema?.ema50) && (
+                  {(technicalIndicators?.ema?.ema20 || technicalIndicators?.ema?.ema50) && (
                     <div className="bg-accent/10 p-4 rounded-lg">
                       <h3 className="text-lg font-medium mb-3 text-foreground flex items-center">
                         <TrendingUp className="mr-2 h-5 w-5 text-blue-500" />
@@ -1204,13 +1204,13 @@ export default function StockDetails() {
                         <div>
                           <p className="text-sm text-muted-foreground">20-Day EMA</p>
                           <p className="font-medium">
-                            {technicalIndicators.ema.ema20 && technicalIndicators.ema.ema20[0] ? `$${parseFloat(technicalIndicators.ema.ema20[0].ema).toFixed(2)}` : "N/A"}
+                            {technicalIndicators?.ema?.ema20?.[0] ? `$${parseFloat(technicalIndicators.ema.ema20[0].ema).toFixed(2)}` : "N/A"}
                           </p>
                         </div>
                         <div>
                           <p className="text-sm text-muted-foreground">50-Day EMA</p>
                           <p className="font-medium">
-                            {technicalIndicators.ema.ema50 && technicalIndicators.ema.ema50[0] ? `$${parseFloat(technicalIndicators.ema.ema50[0].ema).toFixed(2)}` : "N/A"}
+                            {technicalIndicators?.ema?.ema50?.[0] ? `$${parseFloat(technicalIndicators.ema.ema50[0].ema).toFixed(2)}` : "N/A"}
                           </p>
                         </div>
                       </div>
@@ -1285,19 +1285,19 @@ export default function StockDetails() {
                         <div>
                           <p className="text-sm text-muted-foreground">Upper Band</p>
                           <p className="font-medium">
-                            {technicalIndicators.bbands[0] ? `$${parseFloat(technicalIndicators.bbands[0].upper_band).toFixed(2)}` : "N/A"}
+                            {technicalIndicators?.bbands?.[0] ? `$${parseFloat(technicalIndicators.bbands[0].upper_band).toFixed(2)}` : "N/A"}
                           </p>
                         </div>
                         <div>
                           <p className="text-sm text-muted-foreground">Middle Band</p>
                           <p className="font-medium">
-                            {technicalIndicators.bbands[0] ? `$${parseFloat(technicalIndicators.bbands[0].middle_band).toFixed(2)}` : "N/A"}
+                            {technicalIndicators?.bbands?.[0] ? `$${parseFloat(technicalIndicators.bbands[0].middle_band).toFixed(2)}` : "N/A"}
                           </p>
                         </div>
                         <div>
                           <p className="text-sm text-muted-foreground">Lower Band</p>
                           <p className="font-medium">
-                            {technicalIndicators.bbands[0] ? `$${parseFloat(technicalIndicators.bbands[0].lower_band).toFixed(2)}` : "N/A"}
+                            {technicalIndicators?.bbands?.[0] ? `$${parseFloat(technicalIndicators.bbands[0].lower_band).toFixed(2)}` : "N/A"}
                           </p>
                         </div>
                       </div>
