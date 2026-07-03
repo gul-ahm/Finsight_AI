@@ -1159,7 +1159,7 @@ export default function StockDetails() {
             </motion.div>
           )}
 
-          {/* Reddit Social Sentiment Section */}
+          {/* News Sentiment Analysis Section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -1172,7 +1172,7 @@ export default function StockDetails() {
                 <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600">
                   <MessageSquare className="h-6 w-6 text-white" />
                 </div>
-                <h2 className="text-2xl font-semibold text-foreground">Reddit Community Sentiment</h2>
+                <h2 className="text-2xl font-semibold text-foreground">News Sentiment Analysis</h2>
               </div>
               <RedditSocialSentiment symbol={symbol} compact={false} showSearch={false} />
             </Card>

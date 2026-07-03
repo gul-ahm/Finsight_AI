@@ -33,6 +33,12 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
+        hostname: 'api.twelvedata.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
         hostname: 'www.irishtimes.com',
         port: '',
         pathname: '/**',

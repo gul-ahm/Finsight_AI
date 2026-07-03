@@ -96,7 +96,7 @@ export function RedditSocialSentiment({
     setError(null);
     
     try {
-      const response = await fetch(`/api/reddit?symbol=${encodeURIComponent(targetSymbol)}`);
+      const response = await fetch(`/api/news-sentiment?symbol=${encodeURIComponent(targetSymbol)}`);
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || `HTTP error! Status: ${response.status}`);
@@ -109,8 +109,8 @@ export function RedditSocialSentiment({
       // Show a message if no posts were found
       if (data.total_posts === 0) {
         toast({
-          title: "No Reddit Posts Found",
-          description: `No Reddit discussions were found for ${targetSymbol}. This is normal for less popular symbols or when Reddit API access is restricted on deployed servers.`,
+          title: "No News Articles Found",
+          description: `No news sentiment data was found for ${targetSymbol}. Try again later.`,
           variant: "default",
         });
       }
@@ -119,7 +119,7 @@ export function RedditSocialSentiment({
       setError(errorMessage);
       toast({
         title: "Error",
-        description: `Failed to fetch Reddit data: ${errorMessage}`,
+        description: `Failed to fetch sentiment data: ${errorMessage}`,
         variant: "destructive",
       });
     } finally {
@@ -194,7 +194,7 @@ export function RedditSocialSentiment({
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <MessageSquare className="h-5 w-5 text-primary" />
-            <span className="font-semibold">Reddit Sentiment</span>
+            <span className="font-semibold">News Sentiment</span>
           </div>
           <Badge 
             variant="outline" 
@@ -233,7 +233,7 @@ export function RedditSocialSentiment({
         <Card className="p-6 bg-card/80 backdrop-blur-sm border border-primary/10">
           <div className="flex items-center gap-3 mb-4">
             <MessageSquare className="h-6 w-6 text-primary" />
-            <h3 className="text-xl font-semibold">Reddit Social Sentiment</h3>
+            <h3 className="text-xl font-semibold">News Sentiment Analysis</h3>
           </div>
           
           <div className="flex gap-2">
@@ -277,8 +277,8 @@ export function RedditSocialSentiment({
       {loading && (
         <Card className="p-12 text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-          <p className="text-muted-foreground">Analyzing Reddit sentiment for {searchSymbol || symbol}...</p>
-          <p className="text-sm text-muted-foreground mt-2">This may take a moment as we search through financial subreddits</p>
+          <p className="text-muted-foreground">Analyzing news sentiment for {searchSymbol || symbol}...</p>
+          <p className="text-sm text-muted-foreground mt-2">Fetching latest financial news and sentiment analysis</p>
         </Card>
       )}
 
@@ -300,8 +300,8 @@ export function RedditSocialSentiment({
                     <Brain className="h-6 w-6 text-white" />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-bold">{redditData.symbol} Reddit Sentiment</h2>
-                    <p className="text-muted-foreground">Community discussion analysis</p>
+                    <h2 className="text-2xl font-bold">{redditData.symbol} News Sentiment</h2>
+                    <p className="text-muted-foreground">AI-powered financial news analysis</p>
                   </div>
                 </div>
                 <Badge 
@@ -316,20 +316,19 @@ export function RedditSocialSentiment({
               {redditData.total_posts === 0 ? (
                 <div className="text-center py-8">
                   <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                  <h3 className="text-lg font-semibold mb-2">No Reddit Discussions Found</h3>
+                  <h3 className="text-lg font-semibold mb-2">No News Articles Found</h3>
                   <p className="text-muted-foreground mb-4">
-                    We couldn't find any Reddit discussions for {redditData.symbol}. This could be due to:
+                    No news sentiment data found for {redditData.symbol}. This could be due to:
                   </p>
                   <ul className="text-muted-foreground text-sm mb-4 text-left max-w-md mx-auto">
-                    <li className="mb-1">• Limited discussions about this symbol</li>
-                    <li className="mb-1">• Reddit API restrictions on deployed servers</li>
-                    <li className="mb-1">• Temporary Reddit API issues</li>
-                    <li>• Try checking again later or use from localhost</li>
+                    <li className="mb-1">• Limited news coverage for this symbol</li>
+                    <li className="mb-1">• API rate limit reached (try again in a minute)</li>
+                    <li>• Try checking again later</li>
                   </ul>
                   <div className="flex flex-col sm:flex-row gap-2 justify-center">
                     <Button onClick={() => fetchRedditData(redditData.symbol)}>Try Again</Button>
-                    <Link href="https://www.reddit.com" target="_blank">
-                      <Button variant="outline">Search Reddit Directly</Button>
+                    <Link href={`https://www.google.com/finance/quote/${redditData.symbol}`} target="_blank">
+                      <Button variant="outline">View on Google Finance</Button>
                     </Link>
                   </div>
                 </div>
@@ -382,7 +381,7 @@ export function RedditSocialSentiment({
             <Card className="p-6 bg-card/80 backdrop-blur-sm border border-primary/10">
               <div className="flex items-center gap-3 mb-6">
                 <MessageSquare className="h-6 w-6 text-primary" />
-                <h3 className="text-xl font-semibold">Recent Discussions</h3>
+                <h3 className="text-xl font-semibold">Recent News & Analysis</h3>
               </div>
 
               <div className="space-y-4">
@@ -404,7 +403,7 @@ export function RedditSocialSentiment({
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-2">
                               <Badge variant="outline" className="text-xs">
-                                r/{post.subreddit}
+                                {post.subreddit}
                               </Badge>
                               <Badge 
                                 variant="outline" 
@@ -431,7 +430,7 @@ export function RedditSocialSentiment({
                             <div className="flex items-center gap-4 text-xs text-muted-foreground">
                               <div className="flex items-center gap-1">
                                 <Users className="h-3 w-3" />
-                                u/{post.author}
+                                {post.author}
                               </div>
                               <div className="flex items-center gap-1">
                                 <Calendar className="h-3 w-3" />
@@ -499,15 +498,14 @@ export function RedditSocialSentiment({
         <Card className="p-6 bg-card/80 backdrop-blur-sm border border-primary/10">
           <div className="text-center">
             <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-            <h3 className="text-lg font-semibold mb-2">Reddit Sentiment Analysis</h3>
+            <h3 className="text-lg font-semibold mb-2">News Sentiment Analysis</h3>
             <p className="text-muted-foreground mb-4">
-              Reddit sentiment analysis is currently unavailable. This is common when deploying to hosted environments like Render, 
-              as Reddit often blocks requests from server IPs. Try accessing this feature from localhost, or check back later.
+              News sentiment analysis is loading. Please wait a moment while we fetch the latest financial news data.
             </p>
             <div className="flex flex-col sm:flex-row gap-2 justify-center">
               <Button onClick={() => fetchRedditData(initialSymbol || "")}>Try Again</Button>
-              <Link href="https://www.reddit.com" target="_blank">
-                <Button variant="outline">Visit Reddit Directly</Button>
+              <Link href={`https://www.google.com/finance`} target="_blank">
+                <Button variant="outline">View Google Finance</Button>
               </Link>
             </div>
           </div>
@@ -519,15 +517,15 @@ export function RedditSocialSentiment({
         <Card className="p-6 bg-card/80 backdrop-blur-sm border border-primary/10">
           <div className="text-center">
             <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-            <h3 className="text-lg font-semibold mb-2">No Reddit Data Found</h3>
+            <h3 className="text-lg font-semibold mb-2">No News Data Found</h3>
             <p className="text-muted-foreground mb-4">
-              No Reddit discussions were found for "{searchSymbol}". This could be because the symbol is not widely discussed 
-              or Reddit API access is currently restricted.
+              No news sentiment data was found for "{searchSymbol}". This could be because the symbol is not widely covered 
+              or the API rate limit has been reached.
             </p>
             <div className="flex flex-col sm:flex-row gap-2 justify-center">
               <Button onClick={() => setSearchSymbol("")}>Search Again</Button>
-              <Link href="https://www.reddit.com" target="_blank">
-                <Button variant="outline">Search Reddit Directly</Button>
+              <Link href={`https://www.google.com/finance`} target="_blank">
+                <Button variant="outline">View Google Finance</Button>
               </Link>
             </div>
           </div>
