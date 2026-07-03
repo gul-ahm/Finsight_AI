@@ -45,12 +45,25 @@ export async function GET(request: Request) {
     );
   }
 
+  // Format symbol (e.g., LTCBTC -> LTC/BTC) to match Twelve Data's format requirements
+  let formattedSymbol = symbol.toUpperCase();
+  if (!formattedSymbol.includes("/")) {
+    const quoteCurrencies = ["USDT", "USDC", "BUSD", "BTC", "ETH", "USD", "EUR", "GBP", "JPY"];
+    for (const quote of quoteCurrencies) {
+      if (formattedSymbol.endsWith(quote) && formattedSymbol !== quote) {
+        const base = formattedSymbol.slice(0, -quote.length);
+        formattedSymbol = `${base}/${quote}`;
+        break;
+      }
+    }
+  }
+
   // Check cache
-  const cacheKey = symbol.toUpperCase();
+  const cacheKey = formattedSymbol.toUpperCase();
   const cachedData = cryptoCache.get(cacheKey);
   const now = Date.now();
   if (cachedData && now - cachedData.timestamp < CACHE_DURATION) {
-    console.log(`Returning cached crypto data for symbol: ${symbol}`);
+    console.log(`Returning cached crypto data for symbol: ${formattedSymbol}`);
     return NextResponse.json(cachedData.data);
   }
 
@@ -65,52 +78,52 @@ export async function GET(request: Request) {
     }
 
     // Fetch Quote Data
-    const quoteUrl = `https://api.twelvedata.com/quote?symbol=${symbol}&apikey=${apiKey}`;
-    console.log(`Fetching quote data for symbol: ${symbol} from Twelve Data...`);
+    const quoteUrl = `https://api.twelvedata.com/quote?symbol=${formattedSymbol}&apikey=${apiKey}`;
+    console.log(`Fetching quote data for symbol: ${formattedSymbol} from Twelve Data...`);
     const quoteResponse = await fetchWithRetry(quoteUrl);
     const quoteData = await quoteResponse.json();
-    console.log(`Successfully fetched quote data for symbol: ${symbol}`);
+    console.log(`Successfully fetched quote data for symbol: ${formattedSymbol}`);
 
     // Fetch Price Data
-    const priceUrl = `https://api.twelvedata.com/price?symbol=${symbol}&apikey=${apiKey}`;
-    console.log(`Fetching price data for symbol: ${symbol} from Twelve Data...`);
+    const priceUrl = `https://api.twelvedata.com/price?symbol=${formattedSymbol}&apikey=${apiKey}`;
+    console.log(`Fetching price data for symbol: ${formattedSymbol} from Twelve Data...`);
     const priceResponse = await fetchWithRetry(priceUrl);
     const priceData = await priceResponse.json();
-    console.log(`Successfully fetched price data for symbol: ${symbol}`);
+    console.log(`Successfully fetched price data for symbol: ${formattedSymbol}`);
 
     // Fetch EOD Data
-    const eodUrl = `https://api.twelvedata.com/eod?symbol=${symbol}&apikey=${apiKey}`;
-    console.log(`Fetching EOD data for symbol: ${symbol} from Twelve Data...`);
+    const eodUrl = `https://api.twelvedata.com/eod?symbol=${formattedSymbol}&apikey=${apiKey}`;
+    console.log(`Fetching EOD data for symbol: ${formattedSymbol} from Twelve Data...`);
     const eodResponse = await fetchWithRetry(eodUrl);
     const eodData = await eodResponse.json();
-    console.log(`Successfully fetched EOD data for symbol: ${symbol}`);
+    console.log(`Successfully fetched EOD data for symbol: ${formattedSymbol}`);
 
     // Fetch Time Series Data
-    const timeSeriesUrl = `https://api.twelvedata.com/time_series?symbol=${symbol}&interval=1day&outputsize=10&apikey=${apiKey}`; // Reduced outputsize to 10
-    console.log(`Fetching time series data for symbol: ${symbol} from Twelve Data...`);
+    const timeSeriesUrl = `https://api.twelvedata.com/time_series?symbol=${formattedSymbol}&interval=1day&outputsize=10&apikey=${apiKey}`;
+    console.log(`Fetching time series data for symbol: ${formattedSymbol} from Twelve Data...`);
     const timeSeriesResponse = await fetchWithRetry(timeSeriesUrl);
     const timeSeriesData = await timeSeriesResponse.json();
     console.log("timeSeriesData:", timeSeriesData);
-    console.log(`Successfully fetched time series data for symbol: ${symbol}`);
+    console.log(`Successfully fetched time series data for symbol: ${formattedSymbol}`);
 
     // Construct the response
     const response = {
       timeSeries: {
         meta: {
-          symbol: timeSeriesData.meta?.symbol || symbol,
+          symbol: timeSeriesData.meta?.symbol || formattedSymbol,
           interval: timeSeriesData.meta?.interval || "1day",
-          currency_base: symbol.split("/")[0],
-          currency_quote: symbol.split("/")[1],
+          currency_base: formattedSymbol.split("/")[0],
+          currency_quote: formattedSymbol.split("/")[1],
           type: "crypto",
         },
         values: timeSeriesData.values || [],
         status: timeSeriesData.status || "ok",
       },
       quote: {
-        symbol: quoteData.symbol || symbol,
+        symbol: quoteData.symbol || formattedSymbol,
         name: quoteData.name || "Unknown",
-        currency_base: symbol.split("/")[0],
-        currency_quote: symbol.split("/")[1],
+        currency_base: formattedSymbol.split("/")[0],
+        currency_quote: formattedSymbol.split("/")[1],
         datetime: quoteData.datetime || new Date().toISOString().split("T")[0],
         open: quoteData.open || "0",
         high: quoteData.high || "0",
@@ -125,9 +138,9 @@ export async function GET(request: Request) {
         price: priceData.price || "0",
       },
       eod: {
-        symbol: eodData.symbol || symbol,
-        currency_base: symbol.split("/")[0],
-        currency_quote: symbol.split("/")[1],
+        symbol: eodData.symbol || formattedSymbol,
+        currency_base: formattedSymbol.split("/")[0],
+        currency_quote: formattedSymbol.split("/")[1],
         datetime: eodData.datetime || new Date().toISOString().split("T")[0],
         close: eodData.close || "0",
       },
@@ -135,7 +148,7 @@ export async function GET(request: Request) {
 
     // Cache the result
     cryptoCache.set(cacheKey, { data: response, timestamp: now });
-    console.log(`Successfully fetched and cached crypto data for symbol: ${symbol}`);
+    console.log(`Successfully fetched and cached crypto data for symbol: ${formattedSymbol}`);
 
     return NextResponse.json(response);
   } catch (error: unknown) {
