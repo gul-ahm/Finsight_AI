@@ -10,13 +10,32 @@ export async function GET(request: NextRequest) {
     const session = authResult.session;
     if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    // Fetch favorites and map to a simple string array to match legacy API response
+    const userEmail = session.user.email as string;
+
+    // Fetch favorites (legacy)
     const favorites = await prisma.userFavorite.findMany({
-      where: { userId: session.user.email as string }, // Linked via email in schema
+      where: { userId: userEmail },
       select: { symbol: true }
     });
 
-    return NextResponse.json({ watchlist: favorites.map((f: { symbol: string }) => f.symbol) });
+    // Fetch custom watchlist items
+    const customWatchlists = await prisma.watchlist.findMany({
+      where: { userId: userEmail },
+      include: {
+        assets: {
+          select: { symbol: true }
+        }
+      }
+    });
+
+    // Combine all unique symbols from both tables
+    const uniqueSymbols = new Set<string>();
+    favorites.forEach((f: { symbol: string }) => uniqueSymbols.add(f.symbol));
+    customWatchlists.forEach((w: any) => {
+      w.assets.forEach((a: { symbol: string }) => uniqueSymbols.add(a.symbol));
+    });
+
+    return NextResponse.json({ watchlist: Array.from(uniqueSymbols) });
   } catch (error) {
     console.error('Error fetching watchlist:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
