@@ -6,7 +6,8 @@ import { Button } from '@/frontend/ui/button';
 import { Textarea } from '@/frontend/ui/textarea';
 import { useToast } from "@/frontend/hooks/use-toast";
 import Link from "next/link";
-import { TrendingUp, Send, Loader2, Trash2, Clock, Menu, Plus, X } from "lucide-react";
+import { MessageCircle, Send, TrendingUp, X, Menu, Loader2, Plus, Clock, Trash2 } from "lucide-react";
+import { generateChatResponse } from "@/app/actions/chat";
 import { ChatGroq } from "@langchain/groq";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { InMemoryChatMessageHistory } from "@langchain/core/chat_history";
@@ -78,36 +79,31 @@ async function fetchStockListings() {
     return cachedData.data;
   }
 
-  // Fallback if no API key
-  if (!process.env.NEXT_PUBLIC_TWELVEDATA_API_KEY) {
-    console.warn("Twelve Data API key missing. Using mock listings.");
-    return MOCK_STOCKS;
-  }
-
-  const exchanges = ["NASDAQ", "NYSE"];
-  const allListings: any[] = [];
-
   try {
-    const fetchPromises = exchanges.map(async (exchange) => {
-      const url = `https://api.twelvedata.com/stocks?source=docs&exchange=${exchange}&apikey=${process.env.NEXT_PUBLIC_TWELVEDATA_API_KEY}`;
-      const data = await fetchWithRetry(url);
-      return data.data || [];
-    });
-    const results = await Promise.all(fetchPromises);
-    results.forEach((exchangeData) => allListings.push(...exchangeData));
-    const uniqueListings = Array.from(new Map(allListings.map((item) => [item.symbol, item])).values());
-    stockDataCache.set(cacheKey, { data: uniqueListings, timestamp: now });
-    console.log(`Fetched ${uniqueListings.length} US stock listings`);
-    return uniqueListings;
+    const response = await fetchWithRetry('/api/stocks');
+    // Ensure we handle the structure from the /api/stocks response
+    // The backend returns an array of stocks directly if successful
+    let uniqueListings = response;
+    
+    // Check if the response contains an error or isn't an array
+    if (!Array.isArray(response) && response.data) {
+        uniqueListings = response.data;
+    }
+    
+    if (Array.isArray(uniqueListings) && uniqueListings.length > 0) {
+        stockDataCache.set(cacheKey, { data: uniqueListings, timestamp: now });
+        console.log(`Fetched ${uniqueListings.length} US stock listings from local API`);
+        return uniqueListings;
+    } else {
+        console.warn("Invalid stock listings format, returning mock data");
+        return MOCK_STOCKS;
+    }
   } catch (error) {
-    console.error("Error fetching stock listings:", error);
-    // Return mock data on error if we have nothing else
-    if (allListings.length === 0) return MOCK_STOCKS;
-    throw error;
+    console.error("Error fetching stock listings from local API:", error);
+    return MOCK_STOCKS;
   }
 }
 
-// Fetch stock data (quote, time series)
 async function fetchStockData(symbol: string, apiCallCount: { count: number }) {
   const cacheKey = `stockData_${symbol}`;
   const cachedData = stockDataCache.get(cacheKey);
@@ -117,10 +113,16 @@ async function fetchStockData(symbol: string, apiCallCount: { count: number }) {
     return cachedData.data;
   }
 
-  // Fallback if no API key
-  if (!process.env.NEXT_PUBLIC_TWELVEDATA_API_KEY) {
-    console.warn("API key missing. Using mock stock data.");
-    // Return mock data structure
+  try {
+    const url = `/api/stock?symbol=${symbol}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("Local API returned error");
+    const response = await res.json();
+    stockDataCache.set(cacheKey, { data: response, timestamp: now });
+    return response;
+  } catch (error) {
+    console.error(`Error fetching stock data for ${symbol}:`, error);
+    // Return mock data structure on failure to prevent freezing
     return {
       quote: {
         symbol: symbol,
@@ -138,25 +140,6 @@ async function fetchStockData(symbol: string, apiCallCount: { count: number }) {
       }
     };
   }
-
-  try {
-    const quoteUrl = `https://api.twelvedata.com/quote?symbol=${symbol}&apikey=${process.env.NEXT_PUBLIC_TWELVEDATA_API_KEY}`;
-    const quoteResponse = await fetchWithRetry(quoteUrl);
-    apiCallCount.count += 1;
-    if (apiCallCount.count > API_CALL_THRESHOLD) await delay(REQUEST_DELAY_MS);
-
-    const timeSeriesUrl = `https://api.twelvedata.com/time_series?symbol=${symbol}&interval=1day&outputsize=30&apikey=${process.env.NEXT_PUBLIC_TWELVEDATA_API_KEY}`;
-    const timeSeriesResponse = await fetchWithRetry(timeSeriesUrl);
-    apiCallCount.count += 1;
-    if (apiCallCount.count > API_CALL_THRESHOLD) await delay(REQUEST_DELAY_MS);
-
-    const data = { quote: quoteResponse, timeSeries: timeSeriesResponse };
-    stockDataCache.set(cacheKey, { data, timestamp: now });
-    return data;
-  } catch (error) {
-    console.error(`Error fetching stock data for ${symbol}:`, error);
-    throw error;
-  }
 }
 
 // Define IndicatorData interface
@@ -170,91 +153,31 @@ async function fetchIndicators(symbol: string, requestedIndicators: string[], ap
   const cacheKey = `indicators_${symbol}`;
   const cachedData = indicatorsCache.get(cacheKey) || {};
   const now = Date.now();
-
-  const missingIndicators = requestedIndicators.filter(
-    (indicator) => !cachedData[indicator] || now - cachedData[indicator].timestamp >= CACHE_DURATION
-  );
-
-  const indicatorsData: { [key: string]: IndicatorData } = { ...cachedData };
-
-  if (!process.env.NEXT_PUBLIC_TWELVEDATA_API_KEY) {
-    console.warn("API key missing. Using mock indicators.");
-    // Generate mock data for requested indicators
-    const mockData: { [key: string]: IndicatorData } = {};
-    const mockValues = Array(30).fill(0).map((_, i) => ({
-      datetime: new Date(Date.now() - i * 86400000).toISOString().split('T')[0],
-      value: (Math.random() * 100).toFixed(2)
-    }));
-
-    for (const indicator of missingIndicators) {
-      if (indicator === 'ema') {
-        mockData[indicator] = {
-          data: {
-            ema20: { values: mockValues },
-            ema50: { values: mockValues }
-          },
-          timestamp: now
-        };
-      } else {
-        mockData[indicator] = {
-          data: { values: mockValues },
-          timestamp: now
-        };
-      }
-    }
-
-    // Merge with existing cache and return
-    const result = { ...indicatorsData, ...mockData };
-    indicatorsCache.set(cacheKey, result);
-    return result;
+  
+  const allCached = requestedIndicators.every(ind => cachedData[ind] && now - cachedData[ind].timestamp < CACHE_DURATION);
+  if (allCached && requestedIndicators.length > 0) {
+      return cachedData;
   }
 
   try {
-    for (const indicator of missingIndicators) {
-      let url = "";
-      switch (indicator.toLowerCase()) {
-        case "rsi":
-          url = `https://api.twelvedata.com/rsi?symbol=${symbol}&interval=1day&time_period=14&apikey=${process.env.NEXT_PUBLIC_TWELVEDATA_API_KEY}`;
-          break;
-        case "ema":
-          const ema20Url = `https://api.twelvedata.com/ema?symbol=${symbol}&interval=1day&time_period=20&apikey=${process.env.NEXT_PUBLIC_TWELVEDATA_API_KEY}`;
-          const ema20Response = await fetchWithRetry(ema20Url);
-          apiCallCount.count += 1;
-          if (apiCallCount.count > API_CALL_THRESHOLD) await delay(REQUEST_DELAY_MS);
-          const ema50Url = `https://api.twelvedata.com/ema?symbol=${symbol}&interval=1day&time_period=50&apikey=${process.env.NEXT_PUBLIC_TWELVEDATA_API_KEY}`;
-          const ema50Response = await fetchWithRetry(ema50Url);
-          apiCallCount.count += 1;
-          if (apiCallCount.count > API_CALL_THRESHOLD) await delay(REQUEST_DELAY_MS);
-          indicatorsData["ema"] = { data: { ema20: ema20Response, ema50: ema50Response }, timestamp: now };
-          continue;
-        case "macd":
-          url = `https://api.twelvedata.com/macd?symbol=${symbol}&interval=1day&fast_period=12&slow_period=26&signal_period=9&apikey=${process.env.NEXT_PUBLIC_TWELVEDATA_API_KEY}`;
-          break;
-        case "bbands":
-          url = `https://api.twelvedata.com/bbands?symbol=${symbol}&interval=1day&time_period=20&sd=2&apikey=${process.env.NEXT_PUBLIC_TWELVEDATA_API_KEY}`;
-          break;
-        case "adx":
-          url = `https://api.twelvedata.com/adx?symbol=${symbol}&interval=1day&time_period=14&apikey=${process.env.NEXT_PUBLIC_TWELVEDATA_API_KEY}`;
-          break;
-        case "atr":
-          url = `https://api.twelvedata.com/atr?symbol=${symbol}&interval=1day&time_period=14&apikey=${process.env.NEXT_PUBLIC_TWELVEDATA_API_KEY}`;
-          break;
-        case "aroon":
-          url = `https://api.twelvedata.com/aroon?symbol=${symbol}&interval=1day&time_period=14&apikey=${process.env.NEXT_PUBLIC_TWELVEDATA_API_KEY}`;
-          break;
-        default:
-          continue;
-      }
-      const response = await fetchWithRetry(url);
-      apiCallCount.count += 1;
-      if (apiCallCount.count > API_CALL_THRESHOLD) await delay(REQUEST_DELAY_MS);
-      indicatorsData[indicator] = { data: response, timestamp: now };
+    const url = `/api/technical-indicators?symbol=${symbol}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("Local API returned error");
+    const response = await res.json();
+    
+    // Transform backend response to match expected client format
+    const newCacheData: { [key: string]: IndicatorData } = { ...cachedData };
+    if (response) {
+        Object.keys(response).forEach(key => {
+            newCacheData[key] = { data: response[key], timestamp: now };
+        });
     }
-    indicatorsCache.set(cacheKey, indicatorsData);
-    return indicatorsData;
+    
+    indicatorsCache.set(cacheKey, newCacheData);
+    return newCacheData;
   } catch (error) {
-    console.error(`Error fetching indicators for ${symbol}:`, error);
-    throw error;
+    console.error(`Error fetching indicators for ${symbol} from local API:`, error);
+    return cachedData; // Return whatever is cached to prevent freezing
   }
 }
 
@@ -553,17 +476,9 @@ export default function StockAdvisor() {
     setLoading(true);
 
     try {
-      const llm = new ChatGroq({
-        apiKey: process.env.NEXT_PUBLIC_GROK_API_KEY,
-        model: "openai/gpt-oss-120b",
-        temperature: 0.5,
-      });
-
       const chatHistory = chatHistories.get(currentChatId);
       if (!chatHistory) throw new Error("Chat history not initialized.");
       await chatHistory.addMessage(new HumanMessage(userInput));
-
-      const prompt = ChatPromptTemplate.fromMessages([["system", systemPrompt], ["human", "{input}"]]);
 
       // Enhanced symbol detection with multiple patterns and fuzzy matching
       let symbol: string | null = null;
@@ -813,8 +728,30 @@ Please provide a valid US stock symbol for analysis.`;
       let redditData: any = undefined;
       const apiCallCount = { count: 0 };
 
+      // Try to reuse data from chat history to avoid rate limits
+      const previousMessageWithData = messages.slice().reverse().find(m => m.role === "assistant" && m.stockData?.quote?.symbol === symbol);
+      if (previousMessageWithData) {
+        stockData = previousMessageWithData.stockData;
+        indicatorsData = previousMessageWithData.indicatorsData;
+        redditData = previousMessageWithData.redditData;
+      } else if (typeof window !== 'undefined') {
+        // Fallback to localStorage from the stock details page
+        const cachedStr = localStorage.getItem('finsight_last_viewed_stock');
+        if (cachedStr) {
+          try {
+            const cached = JSON.parse(cachedStr);
+            // Check if symbol matches and cache is less than 24 hours old
+            if (cached.symbol === symbol && Date.now() - cached.timestamp < 24 * 60 * 60 * 1000) {
+              stockData = cached.stockData;
+              indicatorsData = cached.technicalIndicators;
+              console.log("Reused stock data from localStorage for", symbol);
+            }
+          } catch(e) {}
+        }
+      }
+
       // Enhanced stock data fetching with fallback analysis
-      if (needsStockData) {
+      if (needsStockData && !stockData) {
         try {
           stockData = await fetchStockData(symbol, apiCallCount);
         } catch (error) {
@@ -866,7 +803,7 @@ Would you like me to proceed with general analysis, or would you prefer to try a
       }
 
       // Enhanced indicators fetching with fallback analysis
-      if (requestedIndicators.length > 0 || input.toLowerCase().includes("analyz") || needsComprehensiveAnalysis) {
+      if ((requestedIndicators.length > 0 || input.toLowerCase().includes("analyz") || needsComprehensiveAnalysis) && !indicatorsData) {
         const indicatorsToFetch = requestedIndicators.length > 0
           ? requestedIndicators
           : needsComprehensiveAnalysis
@@ -907,17 +844,19 @@ Let me provide analysis with the stock data I was able to fetch.`;
       }
 
       // Fetch Reddit sentiment data
-      try {
-        const redditResponse = await fetch(`/api/reddit?symbol=${symbol}`);
+      if (!redditData) {
+        try {
+          const redditResponse = await fetch(`/api/reddit?symbol=${symbol}`);
         if (redditResponse.ok) {
           redditData = await redditResponse.json();
           console.log(`Successfully fetched Reddit data for symbol: ${symbol}`);
         } else {
           console.warn(`Failed to fetch Reddit data for ${symbol}`);
         }
-      } catch (error) {
-        console.warn(`Error fetching Reddit data for ${symbol}:`, error);
-        // Continue without Reddit data
+        } catch (error) {
+          console.warn(`Error fetching Reddit data for ${symbol}:`, error);
+          // Continue without Reddit data
+        }
       }
 
       // Fetch comprehensive market intelligence for analysis requests
@@ -973,14 +912,20 @@ Let me provide analysis with the stock data I was able to fetch.`;
 
       const optimizedIndicators = indicatorsData
         ? Object.fromEntries(
-          Object.entries(indicatorsData).slice(0, 3).map(([key, value]: [string, IndicatorData]) => [
-            key,
-            {
-              symbol: value.data?.symbol,
-              name: value.data?.name,
-              values: value.data?.values ? [value.data.values[0]] : null // Only send latest value
+          Object.entries(indicatorsData).slice(0, 3).map(([key, value]: [string, IndicatorData]) => {
+            let latestValue: any = null;
+            if (Array.isArray(value.data)) {
+              latestValue = value.data[0];
+            } else if (value.data && typeof value.data === 'object') {
+              latestValue = {};
+              for (const subKey in value.data) {
+                if (Array.isArray(value.data[subKey])) {
+                  latestValue[subKey] = value.data[subKey][0];
+                }
+              }
             }
-          ])
+            return [key, latestValue];
+          })
         )
         : null;
 
@@ -1035,8 +980,17 @@ Let me provide analysis with the stock data I was able to fetch.`;
 
       const enhancedInput = `${input}\n\nAPI Data: ${limitedData}${chatHistoryString}`;
 
-      const chain = prompt.pipe(llm);
-      const response = await chain.invoke({ input: enhancedInput, chat_history: (await chatHistory.getMessages()).slice(-3) });
+      const rawHistory = await chatHistory.getMessages();
+      const formattedHistory = rawHistory.slice(-3).map(msg => ({
+        role: msg.constructor.name === "HumanMessage" ? "user" : "assistant",
+        content: msg.content.toString()
+      }));
+
+      const response = await generateChatResponse(enhancedInput, formattedHistory, systemPrompt, 0.5);
+      
+      if (!response.success) {
+        throw new Error(response.error);
+      }
 
       const assistantMessage: Message = {
         role: "assistant",
@@ -1066,6 +1020,24 @@ Let me provide analysis with the stock data I was able to fetch.`;
       });
 
       await chatHistory.addMessage(new SystemMessage(response.content as string));
+      
+      // Save analysis to database history
+      if (symbol) {
+        try {
+          fetch('/api/analysis-history', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              symbol: symbol,
+              assetType: 'stock',
+              dataSnapshot: combinedData,
+              analysis: response.content as string,
+            }),
+          }).catch(err => console.warn('Failed to save analysis history:', err));
+        } catch (e) {
+          console.warn('Failed to save analysis history:', e);
+        }
+      }
     } catch (error) {
       console.error("Chatbot error:", error);
 

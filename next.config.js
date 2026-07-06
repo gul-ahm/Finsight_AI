@@ -91,6 +91,12 @@ const nextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'logo.twelvedata.com',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
 

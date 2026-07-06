@@ -51,6 +51,7 @@ export function middleware(request: NextRequest) {
     style-src 'self' 'unsafe-inline';
     img-src 'self' blob: data: https:;
     font-src 'self' data:;
+    connect-src 'self' https://api.twelvedata.com https://pro-api.coinmarketcap.com;
     object-src 'none';
     base-uri 'self';
     form-action 'self';

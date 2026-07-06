@@ -290,16 +290,13 @@ export default function CryptoDetails() {
         const indicatorsData = await indicatorsResponse.json();
         setTechnicalIndicators(indicatorsData);
       } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        console.error("Error fetching data:", errorMessage);
+        const message = error instanceof Error ? error.message : "Unknown error";
+        console.error("Error fetching crypto data:", message);
         toast({
           title: "Error",
-          description: errorMessage || "Failed to fetch crypto data",
-          variant: "destructive"
+          description: message,
+          variant: "destructive",
         });
-        setOverview(null);
-        setCryptoData(null);
-        setTechnicalIndicators(null);
       } finally {
         setLoading(false);
       }
@@ -307,6 +304,22 @@ export default function CryptoDetails() {
 
     fetchData();
   }, [symbol, toast]);
+
+  // Save to localStorage for the advisor to reuse
+  useEffect(() => {
+    if (cryptoData && technicalIndicators) {
+      try {
+        localStorage.setItem('finsight_last_viewed_crypto', JSON.stringify({
+          symbol: symbol ? symbol.toUpperCase() : null,
+          cryptoData,
+          technicalIndicators,
+          timestamp: Date.now()
+        }));
+      } catch (e) {
+        console.warn("Failed to save to localStorage", e);
+      }
+    }
+  }, [cryptoData, technicalIndicators, symbol]);
 
   if (loading) {
     return (

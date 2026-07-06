@@ -32,6 +32,7 @@ model User {
   watchlists    Watchlist[] // This is the complex watchlist feature
   favorites     UserFavorite[] // This is the simple 'watchlist' array from legacy User model
   trackedAssets TrackedAsset[]
+  analysisHistory AnalysisHistory[]
   
   isPublic      Boolean   @default(false)
   createdAt     DateTime  @default(now())
@@ -124,4 +125,21 @@ model RateLimit {
   key       String   @unique // e.g., "signup:127.0.0.1"
   count     Int      @default(0)
   expiresAt DateTime
+}
+
+model AnalysisHistory {
+  id            String   @id @default(cuid())
+  userId        String?
+  user          User?    @relation(fields: [userId], references: [email])
+  
+  symbol        String
+  assetType     String   // 'stock', 'crypto', 'forex'
+  
+  // The fetched data snapshot (prices, technical indicators)
+  dataSnapshot  Json?
+  
+  // The AI generated analysis text
+  analysis      String
+  
+  createdAt     DateTime @default(now())
 }

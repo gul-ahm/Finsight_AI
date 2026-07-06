@@ -226,9 +226,13 @@ export default function ForexDetails() {
       } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : "Unknown error";
         console.error("Error fetching data:", errorMessage);
+        // Provide a clearer message for rate‑limit issues
+        const friendlyMessage = errorMessage.includes('API credits')
+          ? 'Rate limit exceeded. Please wait a moment and try again.'
+          : errorMessage;
         toast({
           title: "Error",
-          description: errorMessage || "Failed to fetch forex data",
+          description: friendlyMessage || "Failed to fetch forex data",
           variant: "destructive",
         });
         setForexData(null);
@@ -240,6 +244,22 @@ export default function ForexDetails() {
 
     fetchData();
   }, [symbol, toast]);
+
+  // Save to localStorage for the advisor to reuse
+  useEffect(() => {
+    if (forexData && technicalIndicators) {
+      try {
+        localStorage.setItem('finsight_last_viewed_forex', JSON.stringify({
+          symbol: symbol ? symbol.toUpperCase() : null,
+          forexData,
+          technicalIndicators,
+          timestamp: Date.now()
+        }));
+      } catch (e) {
+        console.warn("Failed to save to localStorage", e);
+      }
+    }
+  }, [forexData, technicalIndicators, symbol]);
 
   if (loading) {
     return (
@@ -253,15 +273,14 @@ export default function ForexDetails() {
 
   if (!overview || !forexData || !forexData.timeSeries || !forexData.quote || !technicalIndicators) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <p className="mb-4 text-muted-foreground">
-            No data available for {symbol}. This Forex pair may not be supported.
-          </p>
-          <Link href="/forexs">
-            <Button variant="outline">Back to Forex Listings</Button>
-          </Link>
-        </div>
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 text-center">
+        <h2 className="text-2xl font-bold mb-4">No Data Available</h2>
+        <p className="text-muted-foreground mb-6">
+          No data available for {symbol}. This Forex pair may not be supported or the API limit was reached.
+        </p>
+        <Link href="/forexs" className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors">
+          Back to Forex List
+        </Link>
       </div>
     );
   }
@@ -272,8 +291,8 @@ export default function ForexDetails() {
   const closingPrices = timeSeries.map((entry) => parseFloat(entry.close)).reverse();
 
   // Prepare SMA and Ichimoku data for overlay with null checks
-  const sma20Data = technicalIndicators.sma.sma20?.map((entry) => parseFloat(entry.sma)).reverse() ?? [];
-  const sma50Data = technicalIndicators.sma.sma50?.map((entry) => parseFloat(entry.sma)).reverse() ?? [];
+  const sma20Data = technicalIndicators.sma?.sma20?.map((entry) => parseFloat(entry.sma)).reverse() ?? [];
+  const sma50Data = technicalIndicators.sma?.sma50?.map((entry) => parseFloat(entry.sma)).reverse() ?? [];
   const tenkanSenData = technicalIndicators.ichimoku?.map((entry) => parseFloat(entry.tenkan_sen)).reverse() ?? [];
   const kijunSenData = technicalIndicators.ichimoku?.map((entry) => parseFloat(entry.kijun_sen)).reverse() ?? [];
   const senkouSpanAData = technicalIndicators.ichimoku?.map((entry) => parseFloat(entry.senkou_span_a)).reverse() ?? [];
@@ -1276,16 +1295,16 @@ export default function ForexDetails() {
                     <div>
                       <p className="text-sm text-muted-foreground">20-Day SMA</p>
                       <p className="font-medium">
-                        {technicalIndicators.sma.sma20?.[0]?.sma
-                          ? parseFloat(technicalIndicators.sma.sma20[0].sma).toFixed(4)
+                        {technicalIndicators.sma?.sma20?.[0]?.sma
+                          ? parseFloat(technicalIndicators.sma?.sma20[0].sma).toFixed(4)
                           : "N/A"}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">50-Day SMA</p>
                       <p className="font-medium">
-                        {technicalIndicators.sma.sma50?.[0]?.sma
-                          ? parseFloat(technicalIndicators.sma.sma50[0].sma).toFixed(4)
+                        {technicalIndicators.sma?.sma50?.[0]?.sma
+                          ? parseFloat(technicalIndicators.sma?.sma50[0].sma).toFixed(4)
                           : "N/A"}
                       </p>
                     </div>

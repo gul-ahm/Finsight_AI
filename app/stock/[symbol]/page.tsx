@@ -232,6 +232,22 @@ export default function StockDetails() {
     }
   }, [symbol, toast]);
 
+  // Save to localStorage for the advisor to reuse
+  useEffect(() => {
+    if (stockData && technicalIndicators) {
+      try {
+        localStorage.setItem('finsight_last_viewed_stock', JSON.stringify({
+          symbol: symbol.toUpperCase(),
+          stockData,
+          technicalIndicators,
+          timestamp: Date.now()
+        }));
+      } catch (e) {
+        console.warn("Failed to save to localStorage", e);
+      }
+    }
+  }, [stockData, technicalIndicators, symbol]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">

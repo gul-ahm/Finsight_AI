@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { EMA, RSI, MACD, BollingerBands, ATR, OBV } from 'technicalindicators';
 
 // Force dynamic rendering
 export const dynamic = "force-dynamic";
@@ -7,41 +8,27 @@ export const dynamic = "force-dynamic";
 const indicatorsCache = new Map();
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
-// Rate limit: 8 requests per minute (60 seconds / 8 = 7.5 seconds per request)
-// We'll use 15 seconds to be safe (slightly reduced from 18 seconds to improve fetch time)
-const REQUEST_DELAY_MS = 16000; // 15 seconds delay between requests
-
-// Utility function to delay execution
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
 // Utility function to fetch with retry on rate limit
-async function fetchWithRetry(url: string, maxRetries: number = 3, retryDelayMs: number = 10000) {
+async function fetchWithRetry(url: string, maxRetries: number = 1) {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       const response = await fetch(url);
       if (!response.ok) {
-        const errorData = await response.json();
         if (response.status === 429) {
-          console.warn(`Rate limit hit for URL: ${url}. Retrying (${attempt}/${maxRetries}) after ${retryDelayMs}ms...`);
-          if (attempt === maxRetries) {
-            throw new Error("Rate limit exceeded after maximum retries");
-          }
-          await delay(retryDelayMs);
-          continue;
+          throw new Error("Rate limit exceeded");
         }
-        throw new Error(`API error: ${JSON.stringify(errorData)}`);
+        const errorData = await response.json();
+        throw new Error(`API error: ${errorData.message || "Unknown error"}`);
       }
-      return await response.json();
-    } catch (error: unknown) {
-      if (attempt === maxRetries) {
-        throw error;
+      const data = await response.json();
+      if (data.code === 429 || data.status === "error") {
+         throw new Error(`API error: ${data.message || "Rate limit"}`);
       }
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      console.warn(`Fetch attempt ${attempt} failed for URL: ${url}. Retrying after ${retryDelayMs}ms...`, errorMessage);
-      await delay(retryDelayMs);
+      return data;
+    } catch (error) {
+      if (attempt === maxRetries) throw error;
     }
   }
-  throw new Error("Unexpected error in fetchWithRetry");
 }
 
 export async function GET(request: Request) {
@@ -87,127 +74,79 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Initialize data objects
-    let emaData = { ema20: null, ema50: null };
-    let rsiData = null;
-    let macdData = null;
-    let bbandsData = null;
-    let atrData = null;
-    let obvData = null;
+    // 1. Fetch historical data (100 days)
+    const tsUrl = `https://api.twelvedata.com/time_series?symbol=${formattedSymbol}&interval=1day&outputsize=100&apikey=${TWELVE_DATA_API_KEY}`;
+    console.log(`Fetching historical data for local indicators calculation: ${formattedSymbol}`);
+    const tsResponse = await fetchWithRetry(tsUrl);
+    
+    if (!tsResponse || !tsResponse.values || tsResponse.values.length === 0) {
+        throw new Error("Invalid or empty time series data returned from API");
+    }
+
+    // 2. Prepare data for technicalindicators (needs chronological order: oldest to newest)
+    const rawData = [...tsResponse.values].reverse();
+    
+    const dates = rawData.map(v => v.datetime);
+    const highs = rawData.map(v => parseFloat(v.high));
+    const lows = rawData.map(v => parseFloat(v.low));
+    const closes = rawData.map(v => parseFloat(v.close));
+    const volumes = rawData.map(v => parseFloat(v.volume));
+
+    // 3. Calculate Indicators Locally
+    const ema20Raw = EMA.calculate({ period: 20, values: closes });
+    const ema50Raw = EMA.calculate({ period: 50, values: closes });
+    const rsiRaw = RSI.calculate({ period: 14, values: closes });
+    const macdRaw = MACD.calculate({ values: closes, fastPeriod: 12, slowPeriod: 26, signalPeriod: 9, SimpleMAOscillator: false, SimpleMASignal: false });
+    const bbandsRaw = BollingerBands.calculate({ period: 20, values: closes, stdDev: 2 });
+    const atrRaw = ATR.calculate({ high: highs, low: lows, close: closes, period: 14 });
+    const obvRaw = OBV.calculate({ close: closes, volume: volumes });
+
+    // 4. Fetch complex indicator from TwelveData (Supertrend)
     let supertrendData = null;
-
-    // Fetch 20-day EMA
-    try {
-      const ema20Url = `https://api.twelvedata.com/ema?symbol=${formattedSymbol}&interval=1day&time_period=20&outputsize=100&apikey=${TWELVE_DATA_API_KEY}`;
-      console.log(`Fetching 20-day EMA for symbol: ${formattedSymbol} from Twelve Data...`);
-      const ema20ResponseData = await fetchWithRetry(ema20Url);
-      emaData.ema20 = ema20ResponseData.values || null;
-      console.log(`Successfully fetched 20-day EMA for symbol: ${formattedSymbol}`);
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      console.error(`Error fetching 20-day EMA for symbol ${formattedSymbol}:`, errorMessage);
-    }
-    await delay(REQUEST_DELAY_MS);
-
-    // Fetch 50-day EMA
-    try {
-      const ema50Url = `https://api.twelvedata.com/ema?symbol=${formattedSymbol}&interval=1day&time_period=50&outputsize=100&apikey=${TWELVE_DATA_API_KEY}`;
-      console.log(`Fetching 50-day EMA for symbol: ${formattedSymbol} from Twelve Data...`);
-      const ema50ResponseData = await fetchWithRetry(ema50Url);
-      emaData.ema50 = ema50ResponseData.values || null;
-      console.log(`Successfully fetched 50-day EMA for symbol: ${formattedSymbol}`);
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      console.error(`Error fetching 50-day EMA for symbol ${formattedSymbol}:`, errorMessage);
-    }
-    await delay(REQUEST_DELAY_MS);
-
-    // Fetch RSI (14-day)
-    try {
-      const rsiUrl = `https://api.twelvedata.com/rsi?symbol=${formattedSymbol}&interval=1day&time_period=14&outputsize=100&apikey=${TWELVE_DATA_API_KEY}`;
-      console.log(`Fetching RSI for symbol: ${formattedSymbol} from Twelve Data...`);
-      const rsiResponseData = await fetchWithRetry(rsiUrl);
-      rsiData = rsiResponseData.values || null;
-      console.log(`Successfully fetched RSI for symbol: ${formattedSymbol}`);
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      console.error(`Error fetching RSI for symbol ${formattedSymbol}:`, errorMessage);
-    }
-    await delay(REQUEST_DELAY_MS);
-
-    // Fetch MACD
-    try {
-      const macdUrl = `https://api.twelvedata.com/macd?symbol=${formattedSymbol}&interval=1day&fast_period=12&slow_period=26&signal_period=9&outputsize=100&apikey=${TWELVE_DATA_API_KEY}`;
-      console.log(`Fetching MACD for symbol: ${formattedSymbol} from Twelve Data...`);
-      const macdResponseData = await fetchWithRetry(macdUrl);
-      macdData = macdResponseData.values || null;
-      console.log(`Successfully fetched MACD for symbol: ${formattedSymbol}`);
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      console.error(`Error fetching MACD for symbol ${formattedSymbol}:`, errorMessage);
-    }
-    await delay(REQUEST_DELAY_MS);
-
-    // Fetch BBANDS
-    try {
-      const bbandsUrl = `https://api.twelvedata.com/bbands?symbol=${formattedSymbol}&interval=1day&time_period=20&sd=2&ma_type=SMA&outputsize=100&apikey=${TWELVE_DATA_API_KEY}`;
-      console.log(`Fetching BBANDS for symbol: ${formattedSymbol} from Twelve Data...`);
-      const bbandsResponseData = await fetchWithRetry(bbandsUrl);
-      bbandsData = bbandsResponseData.values || null;
-      console.log(`Successfully fetched BBANDS for symbol: ${formattedSymbol}`);
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      console.error(`Error fetching BBANDS for symbol ${formattedSymbol}:`, errorMessage);
-    }
-    await delay(REQUEST_DELAY_MS);
-
-    // Fetch ATR (14-day)
-    try {
-      const atrUrl = `https://api.twelvedata.com/atr?symbol=${formattedSymbol}&interval=1day&time_period=14&outputsize=100&apikey=${TWELVE_DATA_API_KEY}`;
-      console.log(`Fetching ATR for symbol: ${formattedSymbol} from Twelve Data...`);
-      const atrResponseData = await fetchWithRetry(atrUrl);
-      atrData = atrResponseData.values || null;
-      console.log(`Successfully fetched ATR for symbol: ${formattedSymbol}`);
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      console.error(`Error fetching ATR for symbol ${formattedSymbol}:`, errorMessage);
-    }
-    await delay(REQUEST_DELAY_MS);
-
-    // Fetch OBV
-    try {
-      const obvUrl = `https://api.twelvedata.com/obv?symbol=${formattedSymbol}&interval=1day&outputsize=100&apikey=${TWELVE_DATA_API_KEY}`;
-      console.log(`Fetching OBV for symbol: ${formattedSymbol} from Twelve Data...`);
-      const obvResponseData = await fetchWithRetry(obvUrl);
-      obvData = obvResponseData.values || null;
-      console.log(`Successfully fetched OBV for symbol: ${formattedSymbol}`);
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      console.error(`Error fetching OBV for symbol ${formattedSymbol}:`, errorMessage);
-    }
-    await delay(REQUEST_DELAY_MS);
-
-    // Fetch Supertrend
     try {
       const supertrendUrl = `https://api.twelvedata.com/supertrend?symbol=${formattedSymbol}&interval=1day&multiplier=3&period=10&outputsize=100&apikey=${TWELVE_DATA_API_KEY}`;
       console.log(`Fetching Supertrend for symbol: ${formattedSymbol} from Twelve Data...`);
       const supertrendResponseData = await fetchWithRetry(supertrendUrl);
       supertrendData = supertrendResponseData.values || null;
-      console.log(`Successfully fetched Supertrend for symbol: ${formattedSymbol}`);
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      console.error(`Error fetching Supertrend for symbol ${formattedSymbol}:`, errorMessage);
+    } catch (error) {
+      console.error(`Error fetching Supertrend: ${error}`);
     }
 
-    // Combine all indicator data
+    // 5. Format local calculations to match TwelveData structure
+    const formatOutput = (rawArr: any[], keyName: string | null = null, transform: (val: any) => any = v => String(v)) => {
+        const result = [];
+        let dateIndex = dates.length - 1;
+        for (let i = rawArr.length - 1; i >= 0; i--) {
+            const dateStr = dates[dateIndex];
+            if (keyName) {
+                result.push({ datetime: dateStr, [keyName]: transform(rawArr[i]) });
+            } else {
+                result.push({ datetime: dateStr, ...transform(rawArr[i]) });
+            }
+            dateIndex--;
+        }
+        return result;
+    };
+
     const indicatorsData = {
-      ema: emaData,
-      rsi: rsiData,
-      macd: macdData,
-      bbands: bbandsData,
-      atr: atrData,
-      obv: obvData,
-      supertrend: supertrendData,
+      ema: {
+          ema20: formatOutput(ema20Raw, "ema"),
+          ema50: formatOutput(ema50Raw, "ema")
+      },
+      rsi: formatOutput(rsiRaw, "rsi"),
+      macd: formatOutput(macdRaw, null, (v) => ({
+          macd: String(v.MACD),
+          macd_signal: String(v.signal),
+          macd_hist: String(v.histogram)
+      })),
+      bbands: formatOutput(bbandsRaw, null, (v) => ({
+          upper_band: String(v.upper),
+          middle_band: String(v.middle),
+          lower_band: String(v.lower)
+      })),
+      atr: formatOutput(atrRaw, "atr"),
+      obv: formatOutput(obvRaw, "obv"),
+      supertrend: supertrendData
     };
 
     // Cache the result

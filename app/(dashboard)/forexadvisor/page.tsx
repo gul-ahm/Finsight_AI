@@ -6,7 +6,8 @@ import { Button } from '@/frontend/ui/button';
 import { Textarea } from '@/frontend/ui/textarea';
 import { useToast } from "@/frontend/hooks/use-toast";
 import Link from "next/link";
-import { DollarSign, Send, Loader2, Trash2, Clock, Menu, Plus, X } from "lucide-react";
+import { MessageCircle, Send, TrendingUp, X, Menu, Loader2, Plus, Clock, Trash2, LineChart, DollarSign } from "lucide-react";
+import { generateChatResponse } from "@/app/actions/chat";
 import { ChatGroq } from "@langchain/groq";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { InMemoryChatMessageHistory } from "@langchain/core/chat_history";
@@ -31,7 +32,7 @@ const API_CALL_THRESHOLD = 4; // Apply delay only if API calls exceed this thres
 const delay = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Utility function to fetch with retry on rate limit
-async function fetchWithRetry(url: string, maxRetries: number = 3, retryDelayMs: number = 10000): Promise<any> {
+async function fetchWithRetry(url: string, maxRetries: number = 1, retryDelayMs: number = 0): Promise<any> {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       const response = await fetch(url);
@@ -120,86 +121,26 @@ async function fetchForexData(symbol: string, apiCallCount: { count: number }, f
   return data;
 }
 
-// Fetch specific technical indicators using Twelve Data API
+// Fetch specific technical indicators using local backend
 async function fetchIndicators(
   symbol: string,
   requestedIndicators: string[],
   apiCallCount: { count: number }
-): Promise<{ [key: string]: { data: any; timestamp: number } }> {
+): Promise<any> {
   const cacheKey = `indicators_${symbol.toUpperCase()}`;
-  const cachedData = indicatorsCache.get(cacheKey) ?? {};
-  const now = Date.now();
+  const cachedData = indicatorsCache.get(cacheKey);
+  if (cachedData && Date.now() - cachedData.timestamp < CACHE_DURATION) return cachedData.data;
 
-  const missingIndicators = requestedIndicators.filter(
-    (indicator) => !cachedData[indicator] || (now - cachedData[indicator]?.timestamp >= CACHE_DURATION)
-  );
-
-  const indicatorsData: { [key: string]: { data: any; timestamp: number } } = { ...cachedData };
-  const apiKey = process.env.NEXT_PUBLIC_TWELVEDATA_API_KEY;
-  if (!apiKey) {
-    throw new Error("Twelve Data API key is not configured.");
+  try {
+    const response = await fetch(`/api/forex-technical-indicators?symbol=${symbol}`);
+    if (!response.ok) return null;
+    const data = await response.json();
+    indicatorsCache.set(cacheKey, { data, timestamp: Date.now() });
+    return data;
+  } catch (error) {
+    console.error("Error fetching forex indicators:", error);
+    return null;
   }
-
-  for (const indicator of missingIndicators) {
-    let url = "";
-    switch (indicator.toLowerCase()) {
-      case "rsi":
-        url = `https://api.twelvedata.com/rsi?symbol=${symbol}&interval=1day&time_period=14&apikey=${apiKey}`;
-        break;
-      case "ema":
-        const ema20Url = `https://api.twelvedata.com/ema?symbol=${symbol}&interval=1day&time_period=20&apikey=${apiKey}`;
-        const ema20Response = await fetchWithRetry(ema20Url);
-        apiCallCount.count += 1;
-        if (apiCallCount.count > API_CALL_THRESHOLD) {
-          await delay(REQUEST_DELAY_MS);
-        }
-        const ema50Url = `https://api.twelvedata.com/ema?symbol=${symbol}&interval=1day&time_period=50&apikey=${apiKey}`;
-        const ema50Response = await fetchWithRetry(ema50Url);
-        apiCallCount.count += 1;
-        if (apiCallCount.count > API_CALL_THRESHOLD) {
-          await delay(REQUEST_DELAY_MS);
-        }
-        indicatorsData["ema"] = { data: { ema20: ema20Response, ema50: ema50Response }, timestamp: now };
-        continue;
-      case "macd":
-        url = `https://api.twelvedata.com/macd?symbol=${symbol}&interval=1day&fast_period=12&slow_period=26&signal_period=9&apikey=${apiKey}`;
-        break;
-      case "bbands":
-        url = `https://api.twelvedata.com/bbands?symbol=${symbol}&interval=1day&time_period=20&sd=2&apikey=${apiKey}`;
-        break;
-      case "adx":
-        url = `https://api.twelvedata.com/adx?symbol=${symbol}&interval=1day&time_period=14&apikey=${apiKey}`;
-        break;
-      case "atr":
-        url = `https://api.twelvedata.com/atr?symbol=${symbol}&interval=1day&time_period=14&apikey=${apiKey}`;
-        break;
-      case "ichimoku":
-        url = `https://api.twelvedata.com/ichimoku?symbol=${symbol}&interval=1day&tenkan_period=9&kijun_period=26&senkou_span_b_period=52&displacement=26&apikey=${apiKey}`;
-        break;
-      case "stoch":
-        url = `https://api.twelvedata.com/stoch?symbol=${symbol}&interval=1day&fast_k_period=14&slow_k_period=3&slow_d_period=3&apikey=${apiKey}`;
-        break;
-      case "cci":
-        url = `https://api.twelvedata.com/cci?symbol=${symbol}&interval=1day&time_period=14&apikey=${apiKey}`;
-        break;
-      case "mom":
-        url = `https://api.twelvedata.com/mom?symbol=${symbol}&interval=1day&time_period=10&apikey=${apiKey}`;
-        break;
-      case "pivot_points_hl":
-        url = `https://api.twelvedata.com/pivot_points_hl?symbol=${symbol}&interval=1day&time_period=20&apikey=${apiKey}`;
-        break;
-      default:
-        continue;
-    }
-    const response = await fetchWithRetry(url);
-    apiCallCount.count += 1;
-    if (apiCallCount.count > API_CALL_THRESHOLD) {
-      await delay(REQUEST_DELAY_MS);
-    }
-    indicatorsData[indicator.toLowerCase()] = { data: response, timestamp: now };
-  }
-  indicatorsCache.set(cacheKey, indicatorsData);
-  return indicatorsData;
 }
 
 interface Message {
@@ -423,16 +364,6 @@ export default function ForexAdvisor() {
     setLoading(true);
 
     try {
-      const apiKey = process.env.NEXT_PUBLIC_GROK_API_KEY;
-      if (!apiKey) {
-        throw new Error("Grok API key is not configured.");
-      }
-      const llm = new ChatGroq({
-        apiKey,
-        model: "openai/gpt-oss-120b",
-        temperature: 0.5,
-      });
-
       const chatHistory = chatHistories.get(currentChatId);
       if (!chatHistory) {
         throw new Error("Chat history not initialized for this session.");
@@ -559,12 +490,7 @@ export default function ForexAdvisor() {
         Remember: You are a sophisticated forex advisor capable of handling any currency-related query with professional-grade analysis. Always reference the specific data provided and explain how different data sources inform your analysis.
       `;
 
-      const prompt = ChatPromptTemplate.fromMessages([
-        ["system", systemPrompt],
-        ["human", "{input}"],
-      ]);
-
-      // Enhanced forex pair detection with multiple patterns and aliases
+      // Initialize symbol search variables
       let symbol: string | null = null;
 
       // Pattern 1: Standard forex pair format (EUR/USD, GBP/JPY, etc.)
@@ -895,8 +821,30 @@ Please provide a valid forex pair for analysis.`;
       let redditData: any = undefined;
       const apiCallCount = { count: 0 };
 
+      // Try to reuse data from chat history to avoid rate limits
+      const previousMessageWithData = messages.slice().reverse().find(m => m.role === "assistant" && m.forexData?.quote?.symbol === symbol);
+      if (previousMessageWithData) {
+        forexData = previousMessageWithData.forexData;
+        indicatorsData = previousMessageWithData.indicatorsData;
+        redditData = previousMessageWithData.redditData;
+      } else if (typeof window !== 'undefined') {
+        // Fallback to localStorage from the forex details page
+        const cachedStr = localStorage.getItem('finsight_last_viewed_forex');
+        if (cachedStr) {
+          try {
+            const cached = JSON.parse(cachedStr);
+            // Check if symbol matches and cache is less than 24 hours old
+            if (cached.symbol === symbol && Date.now() - cached.timestamp < 24 * 60 * 60 * 1000) {
+              forexData = cached.forexData;
+              indicatorsData = cached.technicalIndicators;
+              console.log("Reused forex data from localStorage for", symbol);
+            }
+          } catch(e) {}
+        }
+      }
+
       // Fetch only what's needed
-      if (needsForexData || isGeneralAnalysis) {
+      if ((needsForexData || isGeneralAnalysis) && !forexData) {
         const fields = [];
         if (input.toLowerCase().includes("price") || input.toLowerCase().includes("change") || isGeneralAnalysis) {
           fields.push("quote");
@@ -907,7 +855,7 @@ Please provide a valid forex pair for analysis.`;
         forexData = await fetchForexData(symbol, apiCallCount, fields);
       }
 
-      if (requestedIndicators.length > 0 || isGeneralAnalysis) {
+      if ((requestedIndicators.length > 0 || isGeneralAnalysis) && !indicatorsData) {
         const indicatorsToFetch = requestedIndicators.length > 0
           ? requestedIndicators
           : isGeneralAnalysis
@@ -919,17 +867,19 @@ Please provide a valid forex pair for analysis.`;
       }
 
       // Fetch Reddit sentiment data
-      try {
-        const redditResponse = await fetch(`/api/reddit?symbol=${symbol}`);
+      if (!redditData) {
+        try {
+          const redditResponse = await fetch(`/api/reddit?symbol=${symbol}`);
         if (redditResponse.ok) {
           redditData = await redditResponse.json();
           console.log(`Successfully fetched Reddit data for forex pair: ${symbol}`);
         } else {
           console.warn(`Failed to fetch Reddit data for ${symbol}`);
         }
-      } catch (error) {
-        console.warn(`Error fetching Reddit data for ${symbol}:`, error);
-        // Continue without Reddit data
+        } catch (error) {
+          console.warn(`Error fetching Reddit data for ${symbol}:`, error);
+          // Continue without Reddit data
+        }
       }
 
       // Fetch comprehensive market intelligence for analysis requests with timeout
@@ -1010,16 +960,22 @@ Please provide a valid forex pair for analysis.`;
       }
 
       // Optimize indicators data
-      if (indicatorsData) {
+      if (indicatorsData && !indicatorsData.error) {
         optimizedForexData.indicators = {};
         const indicatorsToSend = (requestedIndicators.length > 0 ? requestedIndicators : ["ema", "rsi", "macd"]).slice(0, 3);
         for (const indicator of indicatorsToSend) {
           if (indicatorsData[indicator]) {
-            optimizedForexData.indicators[indicator] = {
-              symbol: indicatorsData[indicator].data?.symbol,
-              name: indicatorsData[indicator].data?.name,
-              values: indicatorsData[indicator].data?.values ? [indicatorsData[indicator].data.values[0]] : null // Only send latest value
-            };
+             const value = indicatorsData[indicator];
+             if (Array.isArray(value)) {
+               optimizedForexData.indicators[indicator] = value.slice(0, 2);
+             } else if (typeof value === 'object' && value !== null) {
+               optimizedForexData.indicators[indicator] = {};
+               for (const [subKey, subValue] of Object.entries(value)) {
+                   if (Array.isArray(subValue)) {
+                       optimizedForexData.indicators[indicator][subKey] = subValue.slice(0, 2);
+                   }
+               }
+             }
           }
         }
       }
@@ -1074,12 +1030,19 @@ Please provide a valid forex pair for analysis.`;
 
       const enhancedInput = `${input}\n\nAPI Data: ${limitedData}${chatHistoryString}`;
 
-      const chain = prompt.pipe(llm);
-      const response = await chain.invoke({
-        input: enhancedInput,
-        chat_history: (await chatHistory.getMessages()).slice(-3),
-      });
+      const rawHistory = await chatHistory.getMessages();
+      const formattedHistory = rawHistory.slice(-4).map(msg => ({
+        role: msg.constructor.name === "HumanMessage" ? "user" : "assistant",
+        content: msg.content.toString()
+      }));
 
+      const response = await generateChatResponse(enhancedInput, formattedHistory, systemPrompt, 0.5);
+      
+      if (!response.success) {
+        throw new Error(response.error);
+      }
+
+      // Add assistant response to UI immediately
       const assistantMessage: Message = {
         role: "assistant",
         content: response.content as string,
@@ -1110,6 +1073,24 @@ Please provide a valid forex pair for analysis.`;
       });
 
       await chatHistory.addMessage(new SystemMessage(response.content as string));
+      
+      // Save analysis to database history
+      if (symbol) {
+        try {
+          fetch('/api/analysis-history', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              symbol: symbol,
+              assetType: 'forex',
+              dataSnapshot: optimizedForexData,
+              analysis: response.content as string,
+            }),
+          }).catch(err => console.warn('Failed to save analysis history:', err));
+        } catch (e) {
+          console.warn('Failed to save analysis history:', e);
+        }
+      }
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "Unknown error";
       console.error("Error in chatbot:", errorMessage);

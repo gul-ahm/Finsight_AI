@@ -6,7 +6,8 @@ import { Button } from '@/frontend/ui/button';
 import { Textarea } from '@/frontend/ui/textarea';
 import { useToast } from "@/frontend/hooks/use-toast";
 import Link from "next/link";
-import { Bitcoin, Send, Loader2, Trash2, Clock, Menu, Plus, X } from "lucide-react";
+import { MessageCircle, Send, TrendingUp, X, Menu, Loader2, Plus, Clock, Trash2, Bitcoin } from "lucide-react";
+import { generateChatResponse } from "@/app/actions/chat";
 import { ChatGroq } from "@langchain/groq";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { InMemoryChatMessageHistory } from "@langchain/core/chat_history";
@@ -21,7 +22,7 @@ const yellow600 = "#CA8A04"; // Tailwind to-yellow-600
 
 // In-memory cache for crypto data and indicators
 const cryptoDataCache = new Map<string, { data: any; timestamp: number }>();
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes for real-time data
+const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours to prevent rate limits
 
 // Rate limit handling
 const REQUEST_DELAY_MS = 8000; // 8 seconds delay (adjusted for Twelve Data's 8 req/min limit)
@@ -31,7 +32,7 @@ const API_CALL_THRESHOLD = 4;
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Utility function to fetch with retry on rate limit
-async function fetchWithRetry(url: string, maxRetries: number = 3, retryDelayMs: number = 10000) {
+async function fetchWithRetry(url: string, maxRetries: number = 1, retryDelayMs: number = 0) {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       const response = await fetch(url);
@@ -346,12 +347,6 @@ export default function CryptoAdvisor() {
     setLoading(true);
 
     try {
-      const llm = new ChatGroq({
-        apiKey: process.env.NEXT_PUBLIC_GROK_API_KEY,
-        model: "openai/gpt-oss-120b",
-        temperature: 0.7,
-      });
-
       const chatHistory = chatHistories.get(currentChatId);
       if (!chatHistory) throw new Error("Chat history not initialized.");
       await chatHistory.addMessage(new HumanMessage(userInput));
@@ -475,11 +470,6 @@ export default function CryptoAdvisor() {
         Remember: You are a sophisticated crypto advisor capable of handling any digital asset query with professional-grade analysis. Always reference the specific data provided and explain how different data sources inform your analysis.
       `;
 
-      const prompt = ChatPromptTemplate.fromMessages([
-        ["system", systemPrompt],
-        ["human", "{input}"],
-      ]);
-
       // Enhanced crypto symbol detection with multiple patterns and aliases
       let symbol: string | null = null;
 
@@ -487,6 +477,15 @@ export default function CryptoAdvisor() {
       const symbolMatch = input.match(/\b[A-Z]{3,5}\/[A-Z]{3,5}\b/);
       if (symbolMatch) {
         symbol = symbolMatch[0].toUpperCase();
+      }
+
+      // Pattern 1.5: Merged crypto pair format (BTCUSD, ETHBTC, LINKETH, etc.)
+      if (!symbol) {
+        const mergedMatch = input.match(/\b([A-Z]{2,5})(USD|USDT|USDC|BTC|ETH|EUR|GBP)\b/i);
+        if (mergedMatch) {
+          // Reconstruct the standard format with slash
+          symbol = `${mergedMatch[1].toUpperCase()}/${mergedMatch[2].toUpperCase()}`;
+        }
       }
 
       // Pattern 2: Crypto name variations and common aliases
@@ -811,7 +810,30 @@ Please provide a valid crypto symbol for analysis.`;
       let marketIntelligence: any = null;
       let marketAlerts: any = null;
 
-      if (needsQuote || isGeneralAnalysis) {
+      // Try to reuse data from chat history to avoid rate limits
+      const previousMessageWithData = messages.slice().reverse().find(m => m.role === "assistant" && m.cryptoData?.quote?.symbol === symbol);
+      if (previousMessageWithData) {
+        cryptoData = previousMessageWithData.cryptoData || {};
+        redditData = previousMessageWithData.redditData || null;
+      } else if (typeof window !== 'undefined') {
+        // Fallback to localStorage from the crypto details page
+        const cachedStr = localStorage.getItem('finsight_last_viewed_crypto');
+        if (cachedStr) {
+          try {
+            const cached = JSON.parse(cachedStr);
+            // Check if symbol matches and cache is less than 24 hours old
+            if (cached.symbol === symbol && Date.now() - cached.timestamp < 24 * 60 * 60 * 1000) {
+              cryptoData = cached.cryptoData;
+              if (cached.technicalIndicators) {
+                cryptoData.indicators = cached.technicalIndicators;
+              }
+              console.log("Reused crypto data from localStorage for", symbol);
+            }
+          } catch(e) {}
+        }
+      }
+
+      if ((needsQuote || isGeneralAnalysis) && !cryptoData.quote) {
         try {
           cryptoData.quote = await fetchCryptoData(symbol, "quote", apiCallCount);
         } catch (error: unknown) {
@@ -820,7 +842,7 @@ Please provide a valid crypto symbol for analysis.`;
         }
       }
 
-      if (needsTrend || isGeneralAnalysis) {
+      if ((needsTrend || isGeneralAnalysis) && !cryptoData.time_series) {
         try {
           cryptoData.time_series = await fetchCryptoData(symbol, "time_series", apiCallCount);
         } catch (error: unknown) {
@@ -829,24 +851,23 @@ Please provide a valid crypto symbol for analysis.`;
         }
       }
 
-      if (requestedIndicators.length > 0 || isGeneralAnalysis) {
-        const indicatorsToFetch = requestedIndicators.length > 0
-          ? requestedIndicators
-          : isGeneralAnalysis
-            ? ["rsi", "ema", "macd", "bbands", "atr", "obv"] // Comprehensive set for detailed crypto analysis
-            : [];
-        for (const indicator of indicatorsToFetch) {
-          try {
-            cryptoData[indicator] = await fetchCryptoData(symbol, indicator, apiCallCount);
-          } catch (error: unknown) {
-            const errorMessage = error instanceof Error ? error.message : "Unknown error";
-            cryptoData[indicator] = { error: errorMessage };
+      if ((requestedIndicators.length > 0 || isGeneralAnalysis) && !cryptoData.indicators) {
+        try {
+          const indicatorsResponse = await fetch(`/api/crypto-technical-indicators?symbol=${symbol}`);
+          if (indicatorsResponse.ok) {
+            cryptoData.indicators = await indicatorsResponse.json();
+          } else {
+             console.warn(`Failed to fetch indicators for ${symbol}`);
+             cryptoData.indicators = { error: "Failed to fetch indicators" };
           }
+        } catch (error: unknown) {
+             const errorMessage = error instanceof Error ? error.message : "Unknown error";
+             cryptoData.indicators = { error: errorMessage };
         }
       }
 
       // Fetch Reddit sentiment data for general analysis
-      if (isGeneralAnalysis || needsTrend || needsQuote) {
+      if ((isGeneralAnalysis || needsTrend || needsQuote) && !redditData) {
         try {
           const redditResponse = await fetch(`/api/reddit?symbol=${symbol}`);
           if (redditResponse.ok) {
@@ -952,18 +973,24 @@ Please provide a valid crypto symbol for analysis.`;
       }
 
       // Optimize indicators data
-      if (cryptoData.indicators) {
+      // Optimize indicators data
+      if (cryptoData.indicators && !cryptoData.indicators.error) {
         optimizedCryptoData.indicators = {};
-        const indicatorEntries = Object.entries(cryptoData.indicators).slice(0, 3);
-        for (const [key, value] of indicatorEntries) {
-          if (typeof value === 'object' && value !== null) {
-            optimizedCryptoData.indicators[key] = {
-              symbol: (value as any).symbol,
-              name: (value as any).name,
-              values: (value as any).values ? [(value as any).values[0]] : null // Only send latest value
-            };
+        for (const [key, value] of Object.entries(cryptoData.indicators)) {
+          if (Array.isArray(value)) {
+            // Keep only the most recent 2 data points for each indicator
+            optimizedCryptoData.indicators[key] = value.slice(0, 2);
+          } else if (typeof value === 'object' && value !== null) {
+             optimizedCryptoData.indicators[key] = {};
+             for (const [subKey, subValue] of Object.entries(value)) {
+                 if (Array.isArray(subValue)) {
+                     optimizedCryptoData.indicators[key][subKey] = subValue.slice(0, 2);
+                 }
+             }
           }
         }
+      } else if (cryptoData.indicators?.error) {
+          optimizedCryptoData.indicators = { error: cryptoData.indicators.error };
       }
 
       // Optimize Reddit sentiment data
@@ -1006,28 +1033,22 @@ Please provide a valid crypto symbol for analysis.`;
       const limitedData = serializedData.length > 2000
         ? serializedData.substring(0, 2000) + '... (data truncated to prevent rate limit)'
         : serializedData;
-
       const recentHistory = messages.slice(-1); // Reduce chat history
       const enhancedInput = `${input}\n\nAPI Data: ${limitedData}\n\nRecent Chat History: ${JSON.stringify(recentHistory)}`;
 
-      const chain = prompt.pipe(llm);
-      const response = await chain.invoke({
-        input: enhancedInput,
-        chat_history: (await chatHistory.getMessages()).slice(-5),
-      });
+      const rawHistory = await chatHistory.getMessages();
+      const formattedHistory = rawHistory.slice(-5).map(msg => ({
+        role: msg.constructor.name === "HumanMessage" ? "user" : "assistant",
+        content: msg.content.toString()
+      }));
 
-      const responseContent = Array.isArray(response.content)
-        ? response.content
-          .map((item: any) => {
-            if ("type" in item && item.type === "text") {
-              return item.text;
-            }
-            return JSON.stringify(item);
-          })
-          .join("\n")
-        : typeof response.content === "string"
-          ? response.content
-          : JSON.stringify(response.content);
+      const response = await generateChatResponse(enhancedInput, formattedHistory, systemPrompt, 0.7);
+      
+      if (!response.success) {
+        throw new Error(response.error);
+      }
+
+      const responseContent = response.content;
 
       const assistantMessage: Message = {
         role: "assistant",
@@ -1057,6 +1078,24 @@ Please provide a valid crypto symbol for analysis.`;
       });
 
       await chatHistory.addMessage(new SystemMessage(responseContent));
+      
+      // Save analysis to database history
+      if (symbol) {
+        try {
+          fetch('/api/analysis-history', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              symbol: symbol,
+              assetType: 'crypto',
+              dataSnapshot: optimizedCryptoData,
+              analysis: response.content as string,
+            }),
+          }).catch(err => console.warn('Failed to save analysis history:', err));
+        } catch (e) {
+          console.warn('Failed to save analysis history:', e);
+        }
+      }
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "Unknown error";
       console.error("Error in chatbot:", errorMessage);
