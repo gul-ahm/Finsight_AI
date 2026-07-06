@@ -1,9 +1,7 @@
-"use server";
+﻿"use server";
 
-import { ChatGroq } from "@langchain/groq";
-import { ChatPromptTemplate, MessagesPlaceholder } from "@langchain/core/prompts";
-import { HumanMessage, SystemMessage, AIMessage } from "@langchain/core/messages";
-
+// This server action delegates to /api/chat which is a standard Next.js API route.
+// More reliable on AWS Amplify than calling Groq directly inside a server action.
 export async function generateChatResponse(
   input: string,
   history: { role: string; content: string }[],
@@ -11,37 +9,34 @@ export async function generateChatResponse(
   temperature: number = 0.5
 ) {
   try {
-    const apiKey = process.env.NEXT_PUBLIC_GROQ_API_KEY || process.env.GROQ_API_KEY;
-    if (!apiKey) {
-      throw new Error("Groq API key is not configured.");
+    // Determine the base URL for the internal API call
+    const baseUrl =
+      process.env.NEXTAUTH_URL ||
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      (process.env.NODE_ENV === "production"
+        ? "https://main.d1copg2plwr1d7.amplifyapp.com"
+        : "http://localhost:3000");
+
+    const response = await fetch(`${baseUrl}/api/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ input, history, systemPrompt, temperature }),
+    });
+
+    if (!response.ok) {
+      const errText = await response.text().catch(() => "Unknown error");
+      throw new Error(`/api/chat returned ${response.status}: ${errText}`);
     }
 
-    const llm = new ChatGroq({
-      apiKey,
-      model: "llama-3.3-70b-versatile",
-      temperature,
-    });
+    const data = await response.json();
 
-    const formattedHistory = history.map(msg => 
-      msg.role === "user" ? new HumanMessage(msg.content) : new AIMessage(msg.content)
-    );
+    if (!data.success) {
+      throw new Error(data.error || "API returned failure");
+    }
 
-    const prompt = ChatPromptTemplate.fromMessages([
-      ["system", systemPrompt],
-      new MessagesPlaceholder("chat_history"),
-      ["human", "{input}"]
-    ]);
-
-    const chain = prompt.pipe(llm);
-    
-    const response = await chain.invoke({ 
-      input,
-      chat_history: formattedHistory
-    });
-    
-    return { success: true, content: response.content as string };
+    return { success: true, content: data.content as string };
   } catch (error: any) {
-    console.error("Server Action LLM Error:", error);
-    return { success: false, error: error.message || "Failed to generate response" };
+    console.error("generateChatResponse error:", error?.message || error);
+    return { success: false, error: error?.message || "Failed to generate response" };
   }
 }
