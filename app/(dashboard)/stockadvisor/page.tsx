@@ -7,7 +7,7 @@ import { Textarea } from '@/frontend/ui/textarea';
 import { useToast } from "@/frontend/hooks/use-toast";
 import Link from "next/link";
 import { MessageCircle, Send, TrendingUp, X, Menu, Loader2, Plus, Clock, Trash2 } from "lucide-react";
-import { generateChatResponse } from "@/app/actions/chat";
+import { generateChatResponse } from "@/lib/chat-client";
 import { ChatGroq } from "@langchain/groq";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { InMemoryChatMessageHistory } from "@langchain/core/chat_history";
