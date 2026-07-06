@@ -49,6 +49,7 @@ async function fetchWithRetry(url: string, maxRetries: number = 1, baseDelay: nu
       if (attempt === maxRetries) throw error;
       await new Promise((resolve) => setTimeout(resolve, baseDelay));
     }
+  }
 }
 
 function calculateSupertrend(highs: number[], lows: number[], closes: number[], dates: string[], period: number = 10, multiplier: number = 3) {
