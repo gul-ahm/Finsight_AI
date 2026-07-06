@@ -118,49 +118,78 @@ export async function GET(request: Request) {
       );
     }
 
-    // Fetch Quote Data
-    const quoteUrl = `https://api.twelvedata.com/quote?symbol=${formattedSymbol}&apikey=${apiKey}`;
-    console.log(`Fetching quote data for symbol: ${formattedSymbol} from Twelve Data...`);
-    const quoteData = await fetchWithRetry(quoteUrl);
-    console.log(`Successfully fetched quote data for symbol: ${formattedSymbol}`);
+    let finalSymbol = formattedSymbol;
+    let quoteData: any;
+    let priceData: any;
+    let eodData: any;
+    let timeSeriesData: any;
 
-    // Fetch Price Data
-    const priceUrl = `https://api.twelvedata.com/price?symbol=${formattedSymbol}&apikey=${apiKey}`;
-    console.log(`Fetching price data for symbol: ${formattedSymbol} from Twelve Data...`);
-    const priceData = await fetchWithRetry(priceUrl);
-    console.log(`Successfully fetched price data for symbol: ${formattedSymbol}`);
+    const doFetch = async (sym: string) => {
+      // Fetch Quote Data
+      const quoteUrl = `https://api.twelvedata.com/quote?symbol=${sym}&apikey=${apiKey}`;
+      console.log(`Fetching quote data for symbol: ${sym} from Twelve Data...`);
+      const q = await fetchWithRetry(quoteUrl);
 
-    // Fetch EOD Data
-    const eodUrl = `https://api.twelvedata.com/eod?symbol=${formattedSymbol}&apikey=${apiKey}`;
-    console.log(`Fetching EOD data for symbol: ${formattedSymbol} from Twelve Data...`);
-    const eodData = await fetchWithRetry(eodUrl);
-    console.log(`Successfully fetched EOD data for symbol: ${formattedSymbol}`);
+      // Fetch Price Data
+      const priceUrl = `https://api.twelvedata.com/price?symbol=${sym}&apikey=${apiKey}`;
+      console.log(`Fetching price data for symbol: ${sym} from Twelve Data...`);
+      const p = await fetchWithRetry(priceUrl);
 
-    // Fetch Time Series Data
-    const timeSeriesUrl = `https://api.twelvedata.com/time_series?symbol=${formattedSymbol}&interval=1day&outputsize=10&apikey=${apiKey}`;
-    console.log(`Fetching time series data for symbol: ${formattedSymbol} from Twelve Data...`);
-    const timeSeriesData = await fetchWithRetry(timeSeriesUrl);
-    console.log("timeSeriesData:", timeSeriesData);
-    console.log(`Successfully fetched time series data for symbol: ${formattedSymbol}`);
+      // Fetch EOD Data
+      const eodUrl = `https://api.twelvedata.com/eod?symbol=${sym}&apikey=${apiKey}`;
+      console.log(`Fetching EOD data for symbol: ${sym} from Twelve Data...`);
+      const e = await fetchWithRetry(eodUrl);
+
+      // Fetch Time Series Data
+      const timeSeriesUrl = `https://api.twelvedata.com/time_series?symbol=${sym}&interval=1day&outputsize=10&apikey=${apiKey}`;
+      console.log(`Fetching time series data for symbol: ${sym} from Twelve Data...`);
+      const t = await fetchWithRetry(timeSeriesUrl);
+
+      return { q, p, e, t };
+    };
+
+    try {
+      const results = await doFetch(finalSymbol);
+      quoteData = results.q;
+      priceData = results.p;
+      eodData = results.e;
+      timeSeriesData = results.t;
+    } catch (firstError: any) {
+      if (
+        firstError.message && 
+        (firstError.message.includes("symbol or figi") || firstError.message.includes("missing or invalid")) &&
+        finalSymbol.endsWith("/USDT")
+      ) {
+        console.log(`Failed to fetch ${finalSymbol}. Retrying with USD fallback...`);
+        finalSymbol = finalSymbol.replace("/USDT", "/USD");
+        const results = await doFetch(finalSymbol);
+        quoteData = results.q;
+        priceData = results.p;
+        eodData = results.e;
+        timeSeriesData = results.t;
+      } else {
+        throw firstError;
+      }
+    }
 
     // Construct the response
     const response = {
       timeSeries: {
         meta: {
-          symbol: timeSeriesData.meta?.symbol || formattedSymbol,
+          symbol: timeSeriesData.meta?.symbol || finalSymbol,
           interval: timeSeriesData.meta?.interval || "1day",
-          currency_base: formattedSymbol.split("/")[0],
-          currency_quote: formattedSymbol.split("/")[1],
+          currency_base: finalSymbol.split("/")[0],
+          currency_quote: finalSymbol.split("/")[1],
           type: "crypto",
         },
         values: timeSeriesData.values || [],
         status: timeSeriesData.status || "ok",
       },
       quote: {
-        symbol: quoteData.symbol || formattedSymbol,
+        symbol: quoteData.symbol || finalSymbol,
         name: quoteData.name || "Unknown",
-        currency_base: formattedSymbol.split("/")[0],
-        currency_quote: formattedSymbol.split("/")[1],
+        currency_base: finalSymbol.split("/")[0],
+        currency_quote: finalSymbol.split("/")[1],
         datetime: quoteData.datetime || new Date().toISOString().split("T")[0],
         open: quoteData.open || "0",
         high: quoteData.high || "0",
@@ -175,9 +204,9 @@ export async function GET(request: Request) {
         price: priceData.price || "0",
       },
       eod: {
-        symbol: eodData.symbol || formattedSymbol,
-        currency_base: formattedSymbol.split("/")[0],
-        currency_quote: formattedSymbol.split("/")[1],
+        symbol: eodData.symbol || finalSymbol,
+        currency_base: finalSymbol.split("/")[0],
+        currency_quote: finalSymbol.split("/")[1],
         datetime: eodData.datetime || new Date().toISOString().split("T")[0],
         close: eodData.close || "0",
       },

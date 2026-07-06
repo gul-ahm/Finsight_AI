@@ -95,15 +95,36 @@ export async function GET(request: Request) {
   }
 
   try {
-    // 1. Fetch historical data (100 days)
-    const tsUrl = `https://api.twelvedata.com/time_series?symbol=${formattedSymbol}&interval=1day&outputsize=100&apikey=${TWELVE_DATA_API_KEY}`;
-    console.log(`Fetching historical data for local indicators calculation: ${formattedSymbol}`);
-    const tsResponse = await fetchWithRetry(tsUrl);
-    
-    if (!tsResponse || !tsResponse.values || tsResponse.values.length === 0) {
-        throw new Error("Invalid or empty time series data returned from API");
-    }
+    let tsResponse = null;
+    let finalSymbol = formattedSymbol;
 
+    const fetchIndicatorsData = async (sym: string) => {
+      const tsUrl = `https://api.twelvedata.com/time_series?symbol=${sym}&interval=1day&outputsize=100&apikey=${TWELVE_DATA_API_KEY}`;
+      console.log(`Fetching historical data for local indicators calculation: ${sym}`);
+      const tsResp = await fetchWithRetry(tsUrl);
+      
+      if (!tsResp || !tsResp.values || tsResp.values.length === 0) {
+          throw new Error("Invalid or empty time series data returned from API");
+      }
+      return tsResp;
+    };
+
+    try {
+      tsResponse = await fetchIndicatorsData(finalSymbol);
+    } catch (firstError: any) {
+      if (
+        firstError.message && 
+        (firstError.message.includes("symbol or figi") || firstError.message.includes("missing or invalid")) &&
+        finalSymbol.endsWith("/USDT")
+      ) {
+        console.log(`Failed to fetch indicators for ${finalSymbol}. Retrying with USD fallback...`);
+        finalSymbol = finalSymbol.replace("/USDT", "/USD");
+        tsResponse = await fetchIndicatorsData(finalSymbol);
+      } else {
+        throw firstError;
+      }
+    }
+    
     // 2. Prepare data for technicalindicators (needs chronological order: oldest to newest)
     const rawData = [...tsResponse.values].reverse();
     
@@ -125,8 +146,8 @@ export async function GET(request: Request) {
     // 4. Fetch complex indicator from TwelveData (Supertrend)
     let supertrendData = null;
     try {
-      const supertrendUrl = `https://api.twelvedata.com/supertrend?symbol=${formattedSymbol}&interval=1day&multiplier=3&period=10&outputsize=100&apikey=${TWELVE_DATA_API_KEY}`;
-      console.log(`Fetching Supertrend for symbol: ${formattedSymbol} from Twelve Data...`);
+      const supertrendUrl = `https://api.twelvedata.com/supertrend?symbol=${finalSymbol}&interval=1day&multiplier=3&period=10&outputsize=100&apikey=${TWELVE_DATA_API_KEY}`;
+      console.log(`Fetching Supertrend for symbol: ${finalSymbol} from Twelve Data...`);
       const supertrendResponseData = await fetchWithRetry(supertrendUrl);
       supertrendData = supertrendResponseData.values || null;
     } catch (error) {
