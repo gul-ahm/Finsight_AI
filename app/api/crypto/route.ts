@@ -11,27 +11,68 @@ const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
 const fetchWithRetry = async (
   url: string,
   maxRetries: number = 3,
-  baseDelay: number = 60000 // 60 seconds
-): Promise<Response> => {
+  baseDelay: number = 2000 // 2 seconds delay for fast serverless function execution
+): Promise<any> => {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    const response = await fetch(url);
-    if (response.status === 429) {
-      const delay = baseDelay * attempt; // Exponential backoff: 60s, 120s, 180s
-      console.log(
-        `Rate limit exceeded for URL ${url}. Retrying in ${delay / 1000} seconds... (Attempt ${attempt}/${maxRetries})`
-      );
-      await new Promise((resolve) => setTimeout(resolve, delay));
-      continue;
+    try {
+      const response = await fetch(url);
+      
+      if (response.status === 429) {
+        const delay = baseDelay * attempt;
+        console.log(
+          `Rate limit exceeded for URL ${url}. Retrying in ${delay / 1000} seconds... (Attempt ${attempt}/${maxRetries})`
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        continue;
+      }
+      
+      const contentType = response.headers.get("content-type") || "";
+      if (!response.ok) {
+        let errMsg = `HTTP Error ${response.status}: ${response.statusText}`;
+        if (contentType.includes("application/json")) {
+          const errJson = await response.json().catch(() => null);
+          if (errJson && errJson.message) {
+            errMsg = errJson.message;
+          }
+        } else {
+          const errText = await response.text().catch(() => "");
+          if (errText) {
+            errMsg = errText.substring(0, 150);
+          }
+        }
+        throw new Error(errMsg);
+      }
+      
+      if (!contentType.includes("application/json")) {
+        const text = await response.text().catch(() => "");
+        throw new Error(`Expected JSON but received Content-Type: ${contentType}. Content: ${text.substring(0, 150)}`);
+      }
+      
+      const data = await response.json();
+      
+      // Twelve Data returns 200 OK with status: "error" for errors
+      if (data && data.status === "error") {
+        if (data.code === 429) {
+          const delay = baseDelay * attempt;
+          console.log(
+            `Twelve Data internal rate limit for URL ${url}. Retrying in ${delay / 1000} seconds... (Attempt ${attempt}/${maxRetries})`
+          );
+          await new Promise((resolve) => setTimeout(resolve, delay));
+          continue;
+        }
+        throw new Error(data.message || "Twelve Data internal API error");
+      }
+      
+      return data;
+    } catch (err: any) {
+      if (attempt === maxRetries) {
+        throw err;
+      }
+      console.warn(`Attempt ${attempt} failed: ${err.message}. Retrying...`);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
     }
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(
-        `Failed to fetch data: ${response.status} - ${errorData.message || response.statusText}`
-      );
-    }
-    return response;
   }
-  throw new Error("Max retries reached due to rate limit (429)");
+  throw new Error("Max retries reached");
 };
 
 export async function GET(request: Request) {
@@ -80,29 +121,25 @@ export async function GET(request: Request) {
     // Fetch Quote Data
     const quoteUrl = `https://api.twelvedata.com/quote?symbol=${formattedSymbol}&apikey=${apiKey}`;
     console.log(`Fetching quote data for symbol: ${formattedSymbol} from Twelve Data...`);
-    const quoteResponse = await fetchWithRetry(quoteUrl);
-    const quoteData = await quoteResponse.json();
+    const quoteData = await fetchWithRetry(quoteUrl);
     console.log(`Successfully fetched quote data for symbol: ${formattedSymbol}`);
 
     // Fetch Price Data
     const priceUrl = `https://api.twelvedata.com/price?symbol=${formattedSymbol}&apikey=${apiKey}`;
     console.log(`Fetching price data for symbol: ${formattedSymbol} from Twelve Data...`);
-    const priceResponse = await fetchWithRetry(priceUrl);
-    const priceData = await priceResponse.json();
+    const priceData = await fetchWithRetry(priceUrl);
     console.log(`Successfully fetched price data for symbol: ${formattedSymbol}`);
 
     // Fetch EOD Data
     const eodUrl = `https://api.twelvedata.com/eod?symbol=${formattedSymbol}&apikey=${apiKey}`;
     console.log(`Fetching EOD data for symbol: ${formattedSymbol} from Twelve Data...`);
-    const eodResponse = await fetchWithRetry(eodUrl);
-    const eodData = await eodResponse.json();
+    const eodData = await fetchWithRetry(eodUrl);
     console.log(`Successfully fetched EOD data for symbol: ${formattedSymbol}`);
 
     // Fetch Time Series Data
     const timeSeriesUrl = `https://api.twelvedata.com/time_series?symbol=${formattedSymbol}&interval=1day&outputsize=10&apikey=${apiKey}`;
     console.log(`Fetching time series data for symbol: ${formattedSymbol} from Twelve Data...`);
-    const timeSeriesResponse = await fetchWithRetry(timeSeriesUrl);
-    const timeSeriesData = await timeSeriesResponse.json();
+    const timeSeriesData = await fetchWithRetry(timeSeriesUrl);
     console.log("timeSeriesData:", timeSeriesData);
     console.log(`Successfully fetched time series data for symbol: ${formattedSymbol}`);
 

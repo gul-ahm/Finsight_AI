@@ -9,17 +9,37 @@ const indicatorsCache = new Map();
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
 // Utility function to fetch with retry on rate limit
-async function fetchWithRetry(url: string, maxRetries: number = 1) {
+async function fetchWithRetry(url: string, maxRetries: number = 1, baseDelay: number = 2000) {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       const response = await fetch(url);
-      if (!response.ok) {
-        if (response.status === 429) {
-          throw new Error("Rate limit exceeded");
-        }
-        const errorData = await response.json();
-        throw new Error(`API error: ${errorData.message || "Unknown error"}`);
+      
+      if (response.status === 429) {
+        throw new Error("Rate limit exceeded");
       }
+      
+      const contentType = response.headers.get("content-type") || "";
+      if (!response.ok) {
+        let errMsg = `HTTP Error ${response.status}: ${response.statusText}`;
+        if (contentType.includes("application/json")) {
+          const errJson = await response.json().catch(() => null);
+          if (errJson && errJson.message) {
+            errMsg = errJson.message;
+          }
+        } else {
+          const errText = await response.text().catch(() => "");
+          if (errText) {
+            errMsg = errText.substring(0, 150);
+          }
+        }
+        throw new Error(errMsg);
+      }
+      
+      if (!contentType.includes("application/json")) {
+        const text = await response.text().catch(() => "");
+        throw new Error(`Expected JSON but received Content-Type: ${contentType}. Content: ${text.substring(0, 150)}`);
+      }
+      
       const data = await response.json();
       if (data.code === 429 || data.status === "error") {
          throw new Error(`API error: ${data.message || "Rate limit"}`);
@@ -27,6 +47,7 @@ async function fetchWithRetry(url: string, maxRetries: number = 1) {
       return data;
     } catch (error) {
       if (attempt === maxRetries) throw error;
+      await new Promise((resolve) => setTimeout(resolve, baseDelay));
     }
   }
 }

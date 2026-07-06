@@ -8,9 +8,9 @@ const stockCache = new Map();
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
 export async function GET(request: Request) {
-  const TWELVE_DATA_API_KEY = process.env.NEXT_PUBLIC_TWELVEDATA_API_KEY;
+  const TWELVE_DATA_API_KEY = process.env.NEXT_PUBLIC_TWELVEDATA_API_KEY || process.env.TWELVE_DATA_API_KEY;
   if (!TWELVE_DATA_API_KEY) {
-    console.error("TWELVE_DATA_API_KEY is not set in environment variables");
+    console.error("TWELVE_DATA_API_KEY / NEXT_PUBLIC_TWELVEDATA_API_KEY is not set in environment variables");
     return NextResponse.json(
       { error: "Server configuration error: API key missing" },
       { status: 500 }
