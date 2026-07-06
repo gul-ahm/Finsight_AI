@@ -1048,7 +1048,7 @@ Please provide a valid crypto symbol for analysis.`;
         throw new Error(response.error);
       }
 
-      const responseContent = response.content;
+      const responseContent = response.content as string;
 
       const assistantMessage: Message = {
         role: "assistant",

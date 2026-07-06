@@ -21,7 +21,7 @@ const emerald600 = "#059669"; // Tailwind to-emerald-600
 
 // In-memory cache for forex data and indicators
 const forexDataCache = new Map<string, { data: any; timestamp: number }>();
-const indicatorsCache = new Map<string, { [key: string]: { data: any; timestamp: number } }>();
+const indicatorsCache = new Map<string, { data: any; timestamp: number }>();
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
 // Rate limit: 8 requests per minute (60 seconds / 8 = 7.5 seconds per request)
