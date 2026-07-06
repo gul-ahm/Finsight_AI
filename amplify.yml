@@ -20,7 +20,7 @@ frontend:
         - echo "TAVILY_API_KEY=$TAVILY_API_KEY" >> .env.production
         - echo "ALPHA_VANTAGE_API_KEY=$ALPHA_VANTAGE_API_KEY" >> .env.production
         - echo "NEXT_PUBLIC_TWELVEDATA_API_KEY=$NEXT_PUBLIC_TWELVEDATA_API_KEY" >> .env.production
-        - echo "NEXT_PUBLIC_GROK_API_KEY=$NEXT_PUBLIC_GROK_API_KEY" >> .env.production
+        - echo "NEXT_PUBLIC_GROQ_API_KEY=$NEXT_PUBLIC_GROQ_API_KEY" >> .env.production
         - echo "NEXT_PUBLIC_TAVILY_API_KEY=$NEXT_PUBLIC_TAVILY_API_KEY" >> .env.production
         - npm run build
   artifacts:
