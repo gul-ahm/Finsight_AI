@@ -49,7 +49,70 @@ async function fetchWithRetry(url: string, maxRetries: number = 1, baseDelay: nu
       if (attempt === maxRetries) throw error;
       await new Promise((resolve) => setTimeout(resolve, baseDelay));
     }
+}
+
+function calculateSupertrend(highs: number[], lows: number[], closes: number[], dates: string[], period: number = 10, multiplier: number = 3) {
+  const atrValues = ATR.calculate({ high: highs, low: lows, close: closes, period });
+  
+  const supertrend = [];
+  const startIdx = highs.length - atrValues.length;
+  
+  let prevUpperBand = 0;
+  let prevLowerBand = 0;
+  let prevDirection = 1; // 1 for up, -1 for down
+
+  // Initialize the first element
+  if (atrValues.length > 0) {
+    const i = startIdx;
+    const hl2 = (highs[i] + lows[i]) / 2;
+    prevUpperBand = hl2 + multiplier * atrValues[0];
+    prevLowerBand = hl2 - multiplier * atrValues[0];
   }
+
+  for (let j = 0; j < atrValues.length; j++) {
+    const i = startIdx + j;
+    const hl2 = (highs[i] + lows[i]) / 2;
+    const atr = atrValues[j];
+    
+    const basicUpperBand = hl2 + multiplier * atr;
+    const basicLowerBand = hl2 - multiplier * atr;
+
+    let finalUpperBand = basicUpperBand;
+    let finalLowerBand = basicLowerBand;
+
+    if (j > 0) {
+      const prevClose = closes[i - 1];
+      finalUpperBand = (basicUpperBand < prevUpperBand || prevClose > prevUpperBand) ? basicUpperBand : prevUpperBand;
+      finalLowerBand = (basicLowerBand > prevLowerBand || prevClose < prevLowerBand) ? basicLowerBand : prevLowerBand;
+    }
+
+    let currentDirection = prevDirection;
+    let currentSupertrend = 0;
+
+    if (closes[i] > finalUpperBand) {
+      currentDirection = 1;
+    } else if (closes[i] < finalLowerBand) {
+      currentDirection = -1;
+    }
+
+    if (currentDirection === 1) {
+      currentSupertrend = finalLowerBand;
+    } else {
+      currentSupertrend = finalUpperBand;
+    }
+
+    supertrend.push({
+      datetime: dates[i],
+      supertrend: String(currentSupertrend),
+      direction: String(currentDirection)
+    });
+
+    prevUpperBand = finalUpperBand;
+    prevLowerBand = finalLowerBand;
+    prevDirection = currentDirection;
+  }
+
+  return supertrend.reverse(); // Newest to oldest to match Twelve Data format
 }
 
 export async function GET(request: Request) {
@@ -143,16 +206,8 @@ export async function GET(request: Request) {
     const atrRaw = ATR.calculate({ high: highs, low: lows, close: closes, period: 14 });
     const obvRaw = OBV.calculate({ close: closes, volume: volumes });
 
-    // 4. Fetch complex indicator from TwelveData (Supertrend)
-    let supertrendData = null;
-    try {
-      const supertrendUrl = `https://api.twelvedata.com/supertrend?symbol=${finalSymbol}&interval=1day&multiplier=3&period=10&outputsize=100&apikey=${TWELVE_DATA_API_KEY}`;
-      console.log(`Fetching Supertrend for symbol: ${finalSymbol} from Twelve Data...`);
-      const supertrendResponseData = await fetchWithRetry(supertrendUrl);
-      supertrendData = supertrendResponseData.values || null;
-    } catch (error) {
-      console.error(`Error fetching Supertrend: ${error}`);
-    }
+    // 4. Calculate Supertrend locally
+    const supertrendData = calculateSupertrend(highs, lows, closes, dates, 10, 3);
 
     // 5. Format local calculations to match TwelveData structure
     const formatOutput = (rawArr: any[], keyName: string | null = null, transform: (val: any) => any = v => String(v)) => {

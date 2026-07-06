@@ -120,8 +120,6 @@ export async function GET(request: Request) {
 
     let finalSymbol = formattedSymbol;
     let quoteData: any;
-    let priceData: any;
-    let eodData: any;
     let timeSeriesData: any;
 
     const doFetch = async (sym: string) => {
@@ -130,29 +128,17 @@ export async function GET(request: Request) {
       console.log(`Fetching quote data for symbol: ${sym} from Twelve Data...`);
       const q = await fetchWithRetry(quoteUrl);
 
-      // Fetch Price Data
-      const priceUrl = `https://api.twelvedata.com/price?symbol=${sym}&apikey=${apiKey}`;
-      console.log(`Fetching price data for symbol: ${sym} from Twelve Data...`);
-      const p = await fetchWithRetry(priceUrl);
-
-      // Fetch EOD Data
-      const eodUrl = `https://api.twelvedata.com/eod?symbol=${sym}&apikey=${apiKey}`;
-      console.log(`Fetching EOD data for symbol: ${sym} from Twelve Data...`);
-      const e = await fetchWithRetry(eodUrl);
-
       // Fetch Time Series Data
       const timeSeriesUrl = `https://api.twelvedata.com/time_series?symbol=${sym}&interval=1day&outputsize=10&apikey=${apiKey}`;
       console.log(`Fetching time series data for symbol: ${sym} from Twelve Data...`);
       const t = await fetchWithRetry(timeSeriesUrl);
 
-      return { q, p, e, t };
+      return { q, t };
     };
 
     try {
       const results = await doFetch(finalSymbol);
       quoteData = results.q;
-      priceData = results.p;
-      eodData = results.e;
       timeSeriesData = results.t;
     } catch (firstError: any) {
       if (
@@ -164,8 +150,6 @@ export async function GET(request: Request) {
         finalSymbol = finalSymbol.replace("/USDT", "/USD");
         const results = await doFetch(finalSymbol);
         quoteData = results.q;
-        priceData = results.p;
-        eodData = results.e;
         timeSeriesData = results.t;
       } else {
         throw firstError;
@@ -201,14 +185,14 @@ export async function GET(request: Request) {
         volume: quoteData.volume || "0",
       },
       price: {
-        price: priceData.price || "0",
+        price: quoteData.close || "0",
       },
       eod: {
-        symbol: eodData.symbol || finalSymbol,
+        symbol: quoteData.symbol || finalSymbol,
         currency_base: finalSymbol.split("/")[0],
         currency_quote: finalSymbol.split("/")[1],
-        datetime: eodData.datetime || new Date().toISOString().split("T")[0],
-        close: eodData.close || "0",
+        datetime: quoteData.datetime || new Date().toISOString().split("T")[0],
+        close: quoteData.previous_close || "0",
       },
     };
 
