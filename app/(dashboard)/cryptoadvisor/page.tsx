@@ -783,7 +783,6 @@ Please provide a valid crypto symbol for analysis.`;
         input.toLowerCase().includes("movement") ||
         input.toLowerCase().includes("direction"); // Always fetch trend for analysis
 
-      // Always fetch comprehensive indicators for analysis, research, or investment queries
       const needsComprehensiveAnalysis =
         input.toLowerCase().includes("analyz") ||
         input.toLowerCase().includes("report") ||
@@ -800,7 +799,8 @@ Please provide a valid crypto symbol for analysis.`;
         input.toLowerCase().includes("full") ||
         input.toLowerCase().includes("complete") ||
         input.toLowerCase().includes("strategy") ||
-        input.toLowerCase().includes("portfolio");
+        input.toLowerCase().includes("portfolio") ||
+        input.toLowerCase().includes("indicator");
 
       const isGeneralAnalysis = needsComprehensiveAnalysis;
 

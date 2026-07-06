@@ -796,7 +796,6 @@ Please provide a valid forex pair for analysis.`;
         input.toLowerCase().includes("weakness") ||
         requestedIndicators.length > 0; // Always fetch forex data if indicators are requested
 
-      // Always fetch comprehensive indicators for analysis, research, or trading queries
       const needsComprehensiveAnalysis =
         input.toLowerCase().includes("analyz") ||
         input.toLowerCase().includes("report") ||
@@ -812,7 +811,8 @@ Please provide a valid forex pair for analysis.`;
         input.toLowerCase().includes("full") ||
         input.toLowerCase().includes("complete") ||
         input.toLowerCase().includes("strategy") ||
-        input.toLowerCase().includes("position");
+        input.toLowerCase().includes("position") ||
+        input.toLowerCase().includes("indicator");
 
       const isGeneralAnalysis = needsComprehensiveAnalysis;
 

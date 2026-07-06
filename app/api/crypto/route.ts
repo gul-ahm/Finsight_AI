@@ -68,9 +68,9 @@ export async function GET(request: Request) {
   }
 
   try {
-    const apiKey = process.env.NEXT_PUBLIC_TWELVEDATA_API_KEY;
+    const apiKey = process.env.NEXT_PUBLIC_TWELVEDATA_API_KEY || process.env.TWELVE_DATA_API_KEY;
     if (!apiKey) {
-      console.error("TWELVE_DATA_API_KEY is not set in environment variables");
+      console.error("TWELVE_DATA_API_KEY / NEXT_PUBLIC_TWELVEDATA_API_KEY is not set in environment variables");
       return NextResponse.json(
         { error: "API key is not configured" },
         { status: 500 }

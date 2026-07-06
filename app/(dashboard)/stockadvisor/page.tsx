@@ -708,7 +708,6 @@ Please provide a valid US stock symbol for analysis.`;
         input.toLowerCase().includes("outlook") ||
         requestedIndicators.length > 0; // Always fetch stock data if indicators are requested
 
-      // Always fetch comprehensive indicators for analysis, research, or investment queries
       const needsComprehensiveAnalysis =
         input.toLowerCase().includes("analyz") ||
         input.toLowerCase().includes("report") ||
@@ -721,7 +720,8 @@ Please provide a valid US stock symbol for analysis.`;
         input.toLowerCase().includes("comprehensive") ||
         input.toLowerCase().includes("detailed") ||
         input.toLowerCase().includes("full") ||
-        input.toLowerCase().includes("complete");
+        input.toLowerCase().includes("complete") ||
+        input.toLowerCase().includes("indicator");
 
       let stockData: any = undefined;
       let indicatorsData: { [key: string]: IndicatorData } | undefined = undefined;
