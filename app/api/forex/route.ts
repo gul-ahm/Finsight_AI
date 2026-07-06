@@ -26,13 +26,19 @@ export async function GET(request: Request) {
     );
   }
 
+  // Format symbol (e.g., EURUSD -> EUR/USD)
+  let formattedSymbol = symbol.toUpperCase();
+  if (!formattedSymbol.includes("/") && formattedSymbol.length === 6) {
+    formattedSymbol = `${formattedSymbol.slice(0, 3)}/${formattedSymbol.slice(3)}`;
+  }
+
   // Check cache
-  const cacheKey = symbol.toUpperCase();
+  const cacheKey = formattedSymbol.toUpperCase();
   const cachedData = forexCache.get(cacheKey);
   const now = Date.now();
   
   if (cachedData && now - cachedData.timestamp < CACHE_DURATION) {
-    console.log(`[Cache Hit] Returning cached forex data for symbol: ${symbol} (Source: ${cachedData.source})`);
+    console.log(`[Cache Hit] Returning cached forex data for symbol: ${formattedSymbol} (Source: ${cachedData.source})`);
     return NextResponse.json(cachedData.data);
   }
 
@@ -40,12 +46,12 @@ export async function GET(request: Request) {
     let forexData;
     let dataSource = "TwelveData";
 
-    console.log(`[Fetch] Attempting to fetch real-time data from TwelveData for ${symbol}...`);
+    console.log(`[Fetch] Attempting to fetch real-time data from TwelveData for ${formattedSymbol}...`);
     try {
-      forexData = await fetchTwelveDataForex(symbol);
+      forexData = await fetchTwelveDataForex(formattedSymbol);
     } catch (error) {
       if (error instanceof RateLimitError) {
-        console.error(`[Rate Limit] TwelveData limit hit for ${symbol}. Please wait and try again later.`);
+        console.error(`[Rate Limit] TwelveData limit hit for ${formattedSymbol}. Please wait and try again later.`);
         throw new Error("API rate limit exceeded. Please try again in a minute.");
       } else {
         throw error;
@@ -54,12 +60,12 @@ export async function GET(request: Request) {
 
     // Cache the result aggressively
     forexCache.set(cacheKey, { data: forexData, timestamp: now, source: dataSource });
-    console.log(`[Success] Fetched and cached forex data for symbol: ${symbol} from ${dataSource}`);
-
+    console.log(`[Success] Fetched and cached forex data for symbol: ${formattedSymbol} from ${dataSource}`);
+    
     return NextResponse.json(forexData);
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error(`[Error] Failed completely fetching forex data for symbol ${symbol}:`, errorMessage);
+    console.error(`[Error] Failed completely fetching forex data for symbol ${formattedSymbol}:`, errorMessage);
     return NextResponse.json(
       { error: "Failed to fetch forex data: " + errorMessage },
       { status: 500 }
