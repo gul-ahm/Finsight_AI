@@ -623,7 +623,15 @@ export default function CryptoAdvisor() {
           input.toLowerCase().includes("explain") ||
           input.toLowerCase().includes("what is") ||
           input.toLowerCase().includes("how to") ||
-          input.toLowerCase().includes("trading");
+          input.toLowerCase().includes("trading") ||
+          input.toLowerCase().includes("invest") ||
+          input.toLowerCase().includes("coin") ||
+          input.toLowerCase().includes("token") ||
+          input.toLowerCase().includes("tell me") ||
+          input.toLowerCase().includes("let me know") ||
+          input.toLowerCase().includes("learn") ||
+          input.toLowerCase().includes("money") ||
+          input.trim().split(" ").length <= 6; // Short queries always go to AI
 
         let content = "";
         if (isGeneralQuery) {

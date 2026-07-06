@@ -569,7 +569,17 @@ export default function StockAdvisor() {
           input.toLowerCase().includes("help") ||
           input.toLowerCase().includes("explain") ||
           input.toLowerCase().includes("what is") ||
-          input.toLowerCase().includes("how to");
+          input.toLowerCase().includes("how to") ||
+          input.toLowerCase().includes("stock") ||
+          input.toLowerCase().includes("invest") ||
+          input.toLowerCase().includes("trade") ||
+          input.toLowerCase().includes("portfolio") ||
+          input.toLowerCase().includes("finance") ||
+          input.toLowerCase().includes("money") ||
+          input.toLowerCase().includes("learn") ||
+          input.toLowerCase().includes("tell me") ||
+          input.toLowerCase().includes("let me know") ||
+          input.trim().split(" ").length <= 6; // Short queries always go to AI
 
         let content = "";
         if (isGeneralQuery) {
@@ -639,7 +649,8 @@ What stock would you like me to analyze?`;
       }
 
       // Enhanced symbol validation with suggestions
-      if (!stockListings.some((s) => s.symbol === symbol)) {
+      // Skip validation if stockListings is empty (API may have failed) - let the AI respond anyway
+      if (stockListings.length > 0 && !stockListings.some((s) => s.symbol === symbol)) {
         // Find similar symbols for suggestions
         const similarSymbols = stockListings
           .filter(stock =>
