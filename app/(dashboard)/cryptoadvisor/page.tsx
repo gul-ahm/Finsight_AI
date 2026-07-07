@@ -859,7 +859,8 @@ Please provide a valid crypto symbol for analysis.`;
         }
       }
 
-      if ((requestedIndicators.length > 0 || isGeneralAnalysis) && !cryptoData.indicators) {
+      // Always fetch indicators for any crypto query
+      if (!cryptoData.indicators) {
         try {
           const indicatorsResponse = await fetch(`/api/crypto-technical-indicators?symbol=${symbol}`);
           if (indicatorsResponse.ok) {
@@ -980,25 +981,24 @@ Please provide a valid crypto symbol for analysis.`;
         };
       }
 
-      // Optimize indicators data
-      // Optimize indicators data
+      // Optimize indicators data — send ALL available indicators (latest value only)
       if (cryptoData.indicators && !cryptoData.indicators.error) {
-        optimizedCryptoData.indicators = {};
+        optimizedCryptoData.technicalIndicators = {};
         for (const [key, value] of Object.entries(cryptoData.indicators)) {
-          if (Array.isArray(value)) {
-            // Keep only the most recent 2 data points for each indicator
-            optimizedCryptoData.indicators[key] = value.slice(0, 2);
+          if (Array.isArray(value) && value.length > 0) {
+            optimizedCryptoData.technicalIndicators[key] = value[0]; // latest only
           } else if (typeof value === 'object' && value !== null) {
-             optimizedCryptoData.indicators[key] = {};
+             const latest: any = {};
              for (const [subKey, subValue] of Object.entries(value)) {
-                 if (Array.isArray(subValue)) {
-                     optimizedCryptoData.indicators[key][subKey] = subValue.slice(0, 2);
+                 if (Array.isArray(subValue) && subValue.length > 0) {
+                     latest[subKey] = subValue[0];
                  }
              }
+             optimizedCryptoData.technicalIndicators[key] = latest;
           }
         }
       } else if (cryptoData.indicators?.error) {
-          optimizedCryptoData.indicators = { error: cryptoData.indicators.error };
+          optimizedCryptoData.technicalIndicators = { error: cryptoData.indicators.error };
       }
 
       // Optimize Reddit sentiment data
@@ -1018,10 +1018,8 @@ Please provide a valid crypto symbol for analysis.`;
         optimizedCryptoData.marketIntelligence = {
           symbol: cryptoData.marketIntelligence.symbol,
           error: cryptoData.marketIntelligence.error,
-          // Only send the analysis, not the raw results which can be large
           synthesizedAnalysis: cryptoData.marketIntelligence.synthesizedAnalysis || cryptoData.marketIntelligence.analysis
         };
-        // Limit the size of the market intelligence analysis
         if (optimizedCryptoData.marketIntelligence.synthesizedAnalysis && optimizedCryptoData.marketIntelligence.synthesizedAnalysis.length > 1000) {
           optimizedCryptoData.marketIntelligence.synthesizedAnalysis = optimizedCryptoData.marketIntelligence.synthesizedAnalysis.substring(0, 1000) + '... (analysis truncated)';
         }
@@ -1036,11 +1034,20 @@ Please provide a valid crypto symbol for analysis.`;
         };
       }
 
-      // Limit the size of the data being sent to prevent rate limit errors
-      const serializedData = JSON.stringify(optimizedCryptoData);
-      const limitedData = serializedData.length > 2000
-        ? serializedData.substring(0, 2000) + '... (data truncated to prevent rate limit)'
-        : serializedData;
+      // Serialize with indicators first so they're never cut off
+      const indicatorsPart = optimizedCryptoData.technicalIndicators
+        ? JSON.stringify(optimizedCryptoData.technicalIndicators)
+        : null;
+      const restObj = { ...optimizedCryptoData };
+      delete restObj.technicalIndicators;
+      const restData = JSON.stringify(restObj);
+      const maxRestLength = 3000;
+      const truncatedRest = restData.length > maxRestLength
+        ? restData.substring(0, maxRestLength) + '...}'
+        : restData;
+      const limitedData = indicatorsPart
+        ? `{"technicalIndicators":${indicatorsPart},${truncatedRest.substring(1)}`
+        : truncatedRest;
       const recentHistory = messages.slice(-1); // Reduce chat history
       const enhancedInput = `${input}\n\nAPI Data: ${limitedData}\n\nRecent Chat History: ${JSON.stringify(recentHistory)}`;
 

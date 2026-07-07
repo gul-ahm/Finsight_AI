@@ -813,44 +813,17 @@ Would you like me to proceed with general analysis, or would you prefer to try a
         }
       }
 
-      // Enhanced indicators fetching with fallback analysis
-      if ((requestedIndicators.length > 0 || input.toLowerCase().includes("analyz") || needsComprehensiveAnalysis) && !indicatorsData) {
+      // Always fetch indicators for any symbol query (not just analysis keywords)
+      if (!indicatorsData) {
         const indicatorsToFetch = requestedIndicators.length > 0
           ? requestedIndicators
-          : needsComprehensiveAnalysis
-            ? ["ema", "rsi", "macd", "bbands", "adx"] // Comprehensive set for detailed analysis
-            : ["ema", "rsi"]; // Default minimal set
+          : ["ema", "rsi", "macd", "bbands", "atr", "obv"]; // Always fetch full set
         try {
           indicatorsData = await fetchIndicators(symbol, indicatorsToFetch, apiCallCount);
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : "Unknown error";
           console.warn(`Failed to fetch indicators for ${symbol}:`, errorMessage);
-
-          // Continue with analysis but note the limitation
-          const indicatorNames = indicatorsToFetch.join(", ").toUpperCase();
-          const partialContent = `⚠️ **Technical Indicators Unavailable for ${symbol}**
-
-I couldn't fetch ${indicatorNames} data: ${errorMessage}
-
-📈 **Alternative Technical Analysis:**
-• Price action analysis using available data
-• Support and resistance level identification
-• Volume trend analysis
-• Chart pattern recognition concepts
-• Moving average theory and application
-
-📚 **Educational Content Available:**
-• How ${indicatorNames} indicators work
-• Interpretation guidelines for technical signals
-• Risk management strategies
-• Portfolio diversification concepts
-
-🔄 **Proceeding with available data...**
-
-Let me provide analysis with the stock data I was able to fetch.`;
-
-          // Continue execution but note the limitation in the response
-          indicatorsData = undefined; // Ensure we proceed without indicators
+          indicatorsData = undefined;
         }
       }
 
@@ -921,66 +894,57 @@ Let me provide analysis with the stock data I was able to fetch.`;
         } : null
       } : null;
 
+      // Format indicators clearly for the AI — only latest value per indicator
+      const formatIndicatorValue = (key: string, value: IndicatorData) => {
+        if (!value?.data) return null;
+        if (Array.isArray(value.data) && value.data.length > 0) {
+          return value.data[0]; // latest entry
+        } else if (value.data && typeof value.data === 'object') {
+          const result: any = {};
+          for (const subKey in value.data) {
+            if (Array.isArray(value.data[subKey]) && value.data[subKey].length > 0) {
+              result[subKey] = value.data[subKey][0];
+            }
+          }
+          return result;
+        }
+        return null;
+      };
+
       const optimizedIndicators = indicatorsData
         ? Object.fromEntries(
-          Object.entries(indicatorsData).slice(0, 3).map(([key, value]: [string, IndicatorData]) => {
-            let latestValue: any = null;
-            if (Array.isArray(value.data)) {
-              latestValue = value.data[0];
-            } else if (value.data && typeof value.data === 'object') {
-              latestValue = {};
-              for (const subKey in value.data) {
-                if (Array.isArray(value.data[subKey])) {
-                  latestValue[subKey] = value.data[subKey][0];
-                }
-              }
-            }
-            return [key, latestValue];
-          })
-        )
+            Object.entries(indicatorsData)
+              .map(([key, value]: [string, IndicatorData]) => [key, formatIndicatorValue(key, value)])
+              .filter(([, v]) => v !== null)
+          )
         : null;
 
-      const optimizedRedditData = redditData ? {
-        symbol: redditData.symbol,
-        bullish_percentage: redditData.bullish_percentage,
-        bearish_percentage: redditData.bearish_percentage,
-        total_posts: redditData.total_posts,
-        overall_sentiment: redditData.overall_sentiment,
-        confidence: redditData.confidence
-      } : null;
-
-      const optimizedMarketIntelligence = marketIntelligence ? {
-        symbol: marketIntelligence.symbol,
-        error: marketIntelligence.error,
-        // Only send the analysis, not the raw results which can be large
-        synthesizedAnalysis: marketIntelligence.synthesizedAnalysis || marketIntelligence.analysis
-      } : null;
-
-      // Limit the size of the market intelligence analysis
-      if (optimizedMarketIntelligence?.synthesizedAnalysis && optimizedMarketIntelligence.synthesizedAnalysis.length > 1000) {
-        optimizedMarketIntelligence.synthesizedAnalysis = optimizedMarketIntelligence.synthesizedAnalysis.substring(0, 1000) + '... (analysis truncated)';;
-      }
-
-      const optimizedMarketAlerts = marketAlerts ? {
-        symbol: marketAlerts.symbol,
-        error: marketAlerts.error,
-        // Only send the alerts, not the raw results
-        alerts: marketAlerts.alerts
-      } : null;
-
       const combinedData = {
+        symbol,
         stockData: optimizedStockData,
-        indicators: optimizedIndicators,
+        technicalIndicators: optimizedIndicators,  // renamed for clarity
         redditSentiment: optimizedRedditData,
         marketIntelligence: optimizedMarketIntelligence,
         marketAlerts: optimizedMarketAlerts,
       };
 
-      // Limit the size of the data being sent to prevent rate limit errors
-      const serializedData = JSON.stringify(combinedData);
-      const limitedData = serializedData.length > 2000
-        ? serializedData.substring(0, 2000) + '... (data truncated to prevent rate limit)'
-        : serializedData;
+      // Serialize — indicators first so they're never cut off
+      const indicatorsPart = optimizedIndicators
+        ? `"technicalIndicators":${JSON.stringify(optimizedIndicators)},`
+        : '';
+      const restData = JSON.stringify({
+        symbol,
+        stockData: optimizedStockData,
+        redditSentiment: optimizedRedditData,
+        marketIntelligence: optimizedMarketIntelligence,
+        marketAlerts: optimizedMarketAlerts,
+      });
+      // Build final payload: always include indicators, truncate rest if needed
+      const maxRestLength = 3000;
+      const truncatedRest = restData.length > maxRestLength
+        ? restData.substring(0, maxRestLength) + '...}'
+        : restData;
+      const limitedData = `{${indicatorsPart}${truncatedRest.substring(1)}`; // merge objects
 
       // Only include chat history for complex analysis requests
       const shouldIncludeChatHistory = input.toLowerCase().includes("analyz") || input.toLowerCase().includes("report") || input.toLowerCase().includes("research");

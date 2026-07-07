@@ -847,7 +847,7 @@ Please provide a valid forex pair for analysis.`;
               indicatorsData = cached.technicalIndicators;
               console.log("Reused forex data from localStorage for", symbol);
             }
-          } catch(e) {}
+          } catch (e) { }
         }
       }
 
@@ -863,27 +863,24 @@ Please provide a valid forex pair for analysis.`;
         forexData = await fetchForexData(symbol, apiCallCount, fields);
       }
 
-      if ((requestedIndicators.length > 0 || isGeneralAnalysis) && !indicatorsData) {
+      // Always fetch indicators for any forex query
+      if (!indicatorsData) {
         const indicatorsToFetch = requestedIndicators.length > 0
           ? requestedIndicators
-          : isGeneralAnalysis
-            ? ["ema", "rsi", "macd", "bbands", "adx", "atr"] // Comprehensive set for detailed forex analysis
-            : []; // Default minimal set
-        if (indicatorsToFetch.length > 0) {
-          indicatorsData = await fetchIndicators(symbol, indicatorsToFetch, apiCallCount);
-        }
+          : ["ema", "rsi", "macd", "bbands", "adx", "atr"]; // Always fetch full set
+        indicatorsData = await fetchIndicators(symbol, indicatorsToFetch, apiCallCount);
       }
 
       // Fetch Reddit sentiment data
       if (!redditData) {
         try {
           const redditResponse = await fetch(`/api/reddit?symbol=${symbol}`);
-        if (redditResponse.ok) {
-          redditData = await redditResponse.json();
-          console.log(`Successfully fetched Reddit data for forex pair: ${symbol}`);
-        } else {
-          console.warn(`Failed to fetch Reddit data for ${symbol}`);
-        }
+          if (redditResponse.ok) {
+            redditData = await redditResponse.json();
+            console.log(`Successfully fetched Reddit data for forex pair: ${symbol}`);
+          } else {
+            console.warn(`Failed to fetch Reddit data for ${symbol}`);
+          }
         } catch (error) {
           console.warn(`Error fetching Reddit data for ${symbol}:`, error);
           // Continue without Reddit data
@@ -967,23 +964,20 @@ Please provide a valid forex pair for analysis.`;
         };
       }
 
-      // Optimize indicators data
-      if (indicatorsData && !indicatorsData.error) {
-        optimizedForexData.indicators = {};
-        const indicatorsToSend = (requestedIndicators.length > 0 ? requestedIndicators : ["ema", "rsi", "macd"]).slice(0, 3);
-        for (const indicator of indicatorsToSend) {
-          if (indicatorsData[indicator]) {
-             const value = indicatorsData[indicator];
-             if (Array.isArray(value)) {
-               optimizedForexData.indicators[indicator] = value.slice(0, 2);
-             } else if (typeof value === 'object' && value !== null) {
-               optimizedForexData.indicators[indicator] = {};
-               for (const [subKey, subValue] of Object.entries(value)) {
-                   if (Array.isArray(subValue)) {
-                       optimizedForexData.indicators[indicator][subKey] = subValue.slice(0, 2);
-                   }
-               }
-             }
+      // Optimize indicators data — send ALL available indicators (latest values only)
+      if (indicatorsData && !(indicatorsData as any).error) {
+        optimizedForexData.technicalIndicators = {};
+        for (const [indicator, value] of Object.entries(indicatorsData)) {
+          if (Array.isArray(value)) {
+            optimizedForexData.technicalIndicators[indicator] = value[0]; // latest only
+          } else if (typeof value === 'object' && value !== null) {
+            const latest: any = {};
+            for (const [subKey, subValue] of Object.entries(value)) {
+              if (Array.isArray(subValue) && subValue.length > 0) {
+                latest[subKey] = subValue[0];
+              }
+            }
+            optimizedForexData.technicalIndicators[indicator] = latest;
           }
         }
       }
@@ -1023,11 +1017,20 @@ Please provide a valid forex pair for analysis.`;
         };
       }
 
-      // Limit the size of the data being sent to prevent rate limit errors
-      const serializedData = JSON.stringify(optimizedForexData);
-      const limitedData = serializedData.length > 2000
-        ? serializedData.substring(0, 2000) + '... (data truncated to prevent rate limit)'
-        : serializedData;
+      // Serialize with indicators first so they're never cut off
+      const indicatorsPart = optimizedForexData.technicalIndicators
+        ? JSON.stringify(optimizedForexData.technicalIndicators)
+        : null;
+      const restObj = { ...optimizedForexData };
+      delete restObj.technicalIndicators;
+      const restData = JSON.stringify(restObj);
+      const maxRestLength = 3000;
+      const truncatedRest = restData.length > maxRestLength
+        ? restData.substring(0, maxRestLength) + '...}'
+        : restData;
+      const limitedData = indicatorsPart
+        ? `{"technicalIndicators":${indicatorsPart},${truncatedRest.substring(1)}`
+        : truncatedRest;
 
       // Only include chat history for complex analysis requests
       const shouldIncludeChatHistory = input.toLowerCase().includes("analyz") || input.toLowerCase().includes("report") || input.toLowerCase().includes("research");
@@ -1045,7 +1048,7 @@ Please provide a valid forex pair for analysis.`;
       }));
 
       const response = await generateChatResponse(enhancedInput, formattedHistory, systemPrompt, 0.5);
-      
+
       if (!response.success) {
         throw new Error(response.error);
       }
@@ -1081,7 +1084,7 @@ Please provide a valid forex pair for analysis.`;
       });
 
       await chatHistory.addMessage(new SystemMessage(response.content as string));
-      
+
       // Save analysis to database history
       if (symbol) {
         try {
