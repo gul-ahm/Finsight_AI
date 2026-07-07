@@ -657,6 +657,8 @@ export default function CryptoDetails() {
         fill: false,
         tension: 0.4,
         pointRadius: 0,
+        borderCapStyle: "butt" as const,
+        borderJoinStyle: "miter" as const,
       },
       {
         type: "line" as const,
@@ -667,6 +669,8 @@ export default function CryptoDetails() {
         fill: false,
         borderDash: [5, 5],
         pointRadius: 0,
+        borderCapStyle: "butt" as const,
+        borderJoinStyle: "miter" as const,
       },
       {
         type: "bar" as const,

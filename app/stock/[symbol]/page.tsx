@@ -580,6 +580,8 @@ export default function StockDetails() {
           type: "line" as const,
           tension: 0.4,
           pointRadius: 0,
+          borderCapStyle: "butt" as const,
+          borderJoinStyle: "miter" as const,
         }]
         : []),
       ...(macdSignalData.length
@@ -592,6 +594,8 @@ export default function StockDetails() {
           type: "line" as const,
           borderDash: [5, 5],
           pointRadius: 0,
+          borderCapStyle: "butt" as const,
+          borderJoinStyle: "miter" as const,
         }]
         : []),
       ...(macdHistData.length
