@@ -919,6 +919,30 @@ Would you like me to proceed with general analysis, or would you prefer to try a
           )
         : null;
 
+      const optimizedRedditData = redditData ? {
+        symbol: redditData.symbol,
+        bullish_percentage: redditData.bullish_percentage,
+        bearish_percentage: redditData.bearish_percentage,
+        total_posts: redditData.total_posts,
+        overall_sentiment: redditData.overall_sentiment,
+        confidence: redditData.confidence
+      } : null;
+
+      const optimizedMarketIntelligence = marketIntelligence ? {
+        symbol: marketIntelligence.symbol,
+        error: marketIntelligence.error,
+        synthesizedAnalysis: marketIntelligence.synthesizedAnalysis || marketIntelligence.analysis
+      } : null;
+      if (optimizedMarketIntelligence?.synthesizedAnalysis && optimizedMarketIntelligence.synthesizedAnalysis.length > 1000) {
+        optimizedMarketIntelligence.synthesizedAnalysis = optimizedMarketIntelligence.synthesizedAnalysis.substring(0, 1000) + '... (analysis truncated)';
+      }
+
+      const optimizedMarketAlerts = marketAlerts ? {
+        symbol: marketAlerts.symbol,
+        error: marketAlerts.error,
+        alerts: marketAlerts.alerts
+      } : null;
+
       const combinedData = {
         symbol,
         stockData: optimizedStockData,
