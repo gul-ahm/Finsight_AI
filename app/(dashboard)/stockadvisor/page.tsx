@@ -933,9 +933,9 @@ Would you like me to proceed with general analysis, or would you prefer to try a
         symbol,
         stockData: optimizedStockData,
         technicalIndicators: optimizedIndicators,  // renamed for clarity
-        redditSentiment: optimizedRedditData,
-        marketIntelligence: optimizedMarketIntelligence,
-        marketAlerts: optimizedMarketAlerts,
+        redditSentiment: redditData,
+        marketIntelligence: marketIntelligence,
+        marketAlerts: marketAlerts,
       };
 
       // Serialize — indicators first so they're never cut off
@@ -945,9 +945,9 @@ Would you like me to proceed with general analysis, or would you prefer to try a
       const restData = JSON.stringify({
         symbol,
         stockData: optimizedStockData,
-        redditSentiment: optimizedRedditData,
-        marketIntelligence: optimizedMarketIntelligence,
-        marketAlerts: optimizedMarketAlerts,
+        redditSentiment: redditData,
+        marketIntelligence: marketIntelligence,
+        marketAlerts: marketAlerts,
       });
       // Build final payload: always include indicators, truncate rest if needed
       const maxRestLength = 3000;
