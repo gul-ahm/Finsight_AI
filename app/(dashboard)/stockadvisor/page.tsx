@@ -817,7 +817,7 @@ Would you like me to proceed with general analysis, or would you prefer to try a
       if (!indicatorsData) {
         const indicatorsToFetch = requestedIndicators.length > 0
           ? requestedIndicators
-          : ["ema", "rsi", "macd", "bbands", "atr", "obv"]; // Always fetch full set
+          : ["ema", "rsi", "macd", "bbands", "atr", "adx", "aroon"]; // Always fetch full set matching the backend
         try {
           indicatorsData = await fetchIndicators(symbol, indicatorsToFetch, apiCallCount);
         } catch (error) {
