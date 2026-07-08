@@ -849,7 +849,17 @@ Would you like me to proceed with general analysis, or would you prefer to try a
       if (needsComprehensiveAnalysis || input.toLowerCase().includes("analyz") || input.toLowerCase().includes("report") || input.toLowerCase().includes("research")) {
         try {
           console.log(`Fetching market intelligence for symbol: ${symbol}`);
-          const marketIntelResponse = await fetch(`/api/market-intelligence?symbol=${symbol}&type=comprehensive`);
+          
+          // Add timeout to prevent hanging
+          const marketIntelPromise = fetch(`/api/market-intelligence?symbol=${symbol}&type=comprehensive`);
+          const marketAlertsPromise = fetch(`/api/market-intelligence?symbol=${symbol}&type=alerts`);
+
+          // Race the promises with a timeout
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Market intelligence request timeout')), 30000) // 30 second timeout
+          );
+
+          const marketIntelResponse = await Promise.race([marketIntelPromise, timeoutPromise]) as Response;
           if (marketIntelResponse.ok) {
             marketIntelligence = await marketIntelResponse.json();
             console.log(`Successfully fetched market intelligence for symbol: ${symbol}`);
@@ -862,7 +872,7 @@ Would you like me to proceed with general analysis, or would you prefer to try a
           }
 
           // Fetch market alerts for risk awareness
-          const marketAlertsResponse = await fetch(`/api/market-intelligence?symbol=${symbol}&type=alerts`);
+          const marketAlertsResponse = await Promise.race([marketAlertsPromise, timeoutPromise]) as Response;
           if (marketAlertsResponse.ok) {
             marketAlerts = await marketAlertsResponse.json();
             console.log(`Successfully fetched market alerts for symbol: ${symbol}`);
@@ -918,30 +928,6 @@ Would you like me to proceed with general analysis, or would you prefer to try a
               .filter(([, v]) => v !== null)
           )
         : null;
-
-      const optimizedRedditData = redditData ? {
-        symbol: redditData.symbol,
-        bullish_percentage: redditData.bullish_percentage,
-        bearish_percentage: redditData.bearish_percentage,
-        total_posts: redditData.total_posts,
-        overall_sentiment: redditData.overall_sentiment,
-        confidence: redditData.confidence
-      } : null;
-
-      const optimizedMarketIntelligence = marketIntelligence ? {
-        symbol: marketIntelligence.symbol,
-        error: marketIntelligence.error,
-        synthesizedAnalysis: marketIntelligence.synthesizedAnalysis || marketIntelligence.analysis
-      } : null;
-      if (optimizedMarketIntelligence?.synthesizedAnalysis && optimizedMarketIntelligence.synthesizedAnalysis.length > 1000) {
-        optimizedMarketIntelligence.synthesizedAnalysis = optimizedMarketIntelligence.synthesizedAnalysis.substring(0, 1000) + '... (analysis truncated)';
-      }
-
-      const optimizedMarketAlerts = marketAlerts ? {
-        symbol: marketAlerts.symbol,
-        error: marketAlerts.error,
-        alerts: marketAlerts.alerts
-      } : null;
 
       const combinedData = {
         symbol,
