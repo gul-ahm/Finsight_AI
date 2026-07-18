@@ -1,21 +1,21 @@
-# FinanceAI - AI-Powered Financial Analysis Platform
+# FinSight AI - AI-Powered Financial Analysis Platform
 
 [![Next.js](https://img.shields.io/badge/Next.js-15.5.7-black)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19.2-blue)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-53%2B%20Passing-brightgreen)](https://github.com/yourusername/financeai)
+[![Tests](https://img.shields.io/badge/Tests-53%2B%20Passing-brightgreen)](https://github.com/gul-ahm/Finsight_AI)
 [![Performance](https://img.shields.io/badge/Lighthouse-90+-brightgreen)](https://developers.google.com/web/tools/lighthouse)
 
 > A production-ready financial analysis platform with AI-powered insights, real-time market data, portfolio management, and advanced search capabilities.
 
-![FinanceAI Dashboard](public/Finance-Markets-Analysis.png)
+![FinSight AI Dashboard](public/Finance-Markets-Analysis.png)
 
-![FinanceAI Dashboard](public/Architecture.png)
+![FinSight AI Dashboard](public/Architecture.png)
 
 ## 🎯 Overview
 
-FinanceAI is a comprehensive financial analysis platform that combines real-time market data with AI-powered insights to help users make informed investment decisions. Built with modern web technologies and optimized for performance, accessibility, and user experience.
+FinSight AI is a comprehensive financial analysis platform that combines real-time market data with AI-powered insights to help users make informed investment decisions. Built with modern web technologies and optimized for performance, accessibility, and user experience.
 
 ## ✨ Key Features
 
@@ -253,7 +253,7 @@ If you want to replace existing crypto data routes to use Binance, mirror the lo
 ## 📁 Project Structure
 
 ```
-financeai/
+finsight-ai/
 ├── app/                      # Next.js app directory
 │   ├── api/                  # API routes
 │   │   ├── portfolio/        # Portfolio endpoints
